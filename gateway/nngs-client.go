@@ -292,12 +292,12 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 							// Original code: @color = WHITE
 							lib.MyColor = phase.White
 							message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
+							fmt.Printf("[情報] 白へ対局を申し込むぜ☆（＾～＾）[%s]\n", message)
 							oi.LongWrite(w, []byte(message))
 						case "B", "b":
 							lib.MyColor = phase.Black
 							message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
+							fmt.Printf("[情報] 黒へ対局を申し込むぜ☆（＾～＾）[%s]\n", message)
 							oi.LongWrite(w, []byte(message))
 						default:
 							panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
