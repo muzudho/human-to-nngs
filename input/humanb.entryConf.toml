@@ -1,0 +1,42 @@
+[Nngs]
+
+# * `Human` - 人間プレイヤーが接続する
+# * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
+PlayerType = 'Human'
+
+Host = 'localhost'
+
+# 接続先サーバーのポート番号
+# (^q^) 数値型のデータをクォーテーションで囲むとエラーもなく読取失敗するから注意☆
+Port = 9696
+
+# 対局者名（アカウント名）
+# Only A-Z a-z 0-9
+# Names may be at most 10 characters long
+User = 'Otonb'
+
+# パスワード（任意）
+Pass = ''
+
+# EngineCommand - 思考エンジンを起動するコマンドの実行ファイル名の部分（OSにより書き方が異なるかも）
+EngineCommand = ''
+# EngineCommandOption - 思考エンジンを起動するコマンドの半角スペース区切りの引数（OSにより書き方が異なるかも）
+EngineCommandOption = ''
+
+# マッチの申込
+[MatchApplication]
+
+# 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。
+Apply = false
+
+# 白番なら 'W', 黒番なら 'B'
+Phase = 'B'
+
+# 何路盤
+BoardSize = 19
+
+# 持ち時間（分）
+AvailableTimeMinutes = 40
+
+# カナダ式秒読み。25手を何分以内に打てばよいか
+CanadianTiming = 0
