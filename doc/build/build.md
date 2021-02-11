@@ -1,0 +1,5 @@
+# Build
+
+```shell
+go build
+```
