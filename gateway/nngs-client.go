@@ -94,7 +94,7 @@ func (client NngsClient) Spawn(entryConf c.EntryConf, nngsListener e.NngsListene
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
 		regexUseMatch:          *regexp.MustCompile("^Use <match"),
-		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond."),
+		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond.$"), // (2021-02-11)末尾に $ 追加☆（＾～＾）
 		regexMatchAccepted:     *regexp.MustCompile("^Match \\[.+?\\] with (\\S+?) in \\S+? accepted."),
 		regexDecline1:          *regexp.MustCompile("declines your request for a match."),
 		regexDecline2:          *regexp.MustCompile("You decline the match offer from"),
@@ -258,7 +258,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
 						// Original code: cmd_match_ok
-						// 3回ぐらい ここを通るような？
+						// 3回ぐらい ここを通るような？.
 						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）accept[%s],decline[%s]\n", matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
