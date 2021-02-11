@@ -125,8 +125,8 @@ func (lib *libraryListener) read(w telnet.Writer, r telnet.Reader) {
 			bytes := p[:n]
 			lib.lineBuffer[lib.index] = bytes[0]
 			lib.index++
-			// 改行がない行も届くので、改行が届くまで待つという処理ができません。
-			print(string(bytes)) // 受け取るたびに表示。
+			// [受信] 割り込みで 改行がない行も届くので、改行が届くまで待つという処理ができません。
+			print(string(bytes)) // 受け取るたびに１文字ずつ表示。
 
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
 			lib.parse(w)
@@ -211,12 +211,12 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 				// Original code: @color = WHITE
 				lib.MyColor = phase.White
 				message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				// fmt.Printf("対局を申し込んだぜ☆（＾～＾）[%s]", message)
+				// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 				oi.LongWrite(w, []byte(message))
 			case "B", "b":
 				lib.MyColor = phase.Black
 				message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				// fmt.Printf("対局を申し込んだぜ☆（＾～＾）[%s]", message)
+				// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 				oi.LongWrite(w, []byte(message))
 			default:
 				panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
@@ -227,11 +227,11 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 		// /^(\d+) (.*)/
 		// if lib.regexCommand.MatchString(line) {
 		// 	// コマンドの形をしていたぜ☆（＾～＾）
-		// 	// fmt.Printf("何かコマンドかだぜ☆（＾～＾）？[%s]", line)
+		// 	// fmt.Printf("[情報] 何かコマンドかだぜ☆（＾～＾）？[%s]", line)
 		// }
 		matches := lib.regexCommand.FindSubmatch(lib.lineBuffer[:lib.index])
 
-		//fmt.Printf("m[%s]", matches)
+		//fmt.Printf("[情報] m[%s]", matches)
 		//print(matches)
 		if 2 < len(matches) {
 			commandCodeBytes := matches[1]
@@ -258,7 +258,8 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
 						// Original code: cmd_match_ok
-						fmt.Printf("対局が付いたぜ☆（＾～＾）accept[%s],decline[%s]", matches2[1], matches2[2])
+						// 3回ぐらい ここを通るような？
+						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）accept[%s],decline[%s]\n", matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
 						lib.CommandOfMatchAccept = string(matches2[1])
@@ -283,7 +284,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 								panic(err)
 							}
 							lib.BoardSize = uint(boardSize)
-							fmt.Printf("ボードサイズは%d☆（＾～＾）", lib.BoardSize)
+							fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", lib.BoardSize)
 						}
 
 						switch lib.entryConf.Phase() {
@@ -291,12 +292,12 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 							// Original code: @color = WHITE
 							lib.MyColor = phase.White
 							message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							// fmt.Printf("対局を申し込んだぜ☆（＾～＾）[%s]", message)
+							// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 							oi.LongWrite(w, []byte(message))
 						case "B", "b":
 							lib.MyColor = phase.Black
 							message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							// fmt.Printf("対局を申し込んだぜ☆（＾～＾）[%s]", message)
+							// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 							oi.LongWrite(w, []byte(message))
 						default:
 							panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
@@ -335,7 +336,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 					matches2 := lib.regexGame.FindSubmatch(commandBodyBytes)
 					if 10 < len(matches2) {
 						// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
-						// fmt.Printf("対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
+						// fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
 
 						// ゲームID
 						// Original code: @gameid
@@ -384,7 +385,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 					matches2 := lib.regexMove.FindSubmatch(commandBodyBytes)
 					if 3 < len(matches2) {
 						// Original code: @lastmove = [$1, $2, $3]
-						fmt.Printf("指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches2[1], matches2[2], matches2[3])
+						fmt.Printf("[情報] 指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches2[1], matches2[2], matches2[3])
 
 						// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
 						switch string(matches2[2]) {
@@ -399,7 +400,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 						if lib.MyColor == lib.Phase {
 							// 自分の手番だぜ☆（＾～＾）！
 							lib.OpponentMove = string(matches2[3]) // 相手の指し手が付いてくるので記憶
-							fmt.Printf("自分の手番で一旦ブロッキング☆（＾～＾）")
+							fmt.Printf("[情報] 自分の手番で一旦ブロッキング☆（＾～＾）")
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 							lib.state = clistat.BlockingMyTurn
 
@@ -425,7 +426,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 						} else {
 							// 相手の手番だぜ☆（＾～＾）！
 							lib.MyMove = string(matches2[3]) // 自分の指し手が付いてくるので記憶
-							fmt.Printf("相手の手番で一旦ブロッキング☆（＾～＾）")
+							fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 							lib.state = clistat.BlockingOpponentTurn
 
@@ -459,10 +460,10 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 		}
 	case clistat.BlockingMyTurn:
 		// 自分の手番で受信はブロック中です
-		// fmt.Printf("自分[%d]のターン☆（＾～＾）", lib.MyColor)
+		// fmt.Printf("[情報] 自分[%d]のターン☆（＾～＾）", lib.MyColor)
 	case clistat.BlockingOpponentTurn:
 		// 相手の手番で受信はブロック中です。
-		// fmt.Printf("自分[%d]の相手のターン☆（＾～＾）", lib.MyColor)
+		// fmt.Printf("[情報] 自分[%d]の相手のターン☆（＾～＾）", lib.MyColor)
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
 		panic(fmt.Sprintf("Unexpected state transition. state=%d", lib.state))

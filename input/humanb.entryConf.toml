@@ -1,3 +1,5 @@
+# 黒プレイヤー（人間）を想定
+
 [Nngs]
 
 # * `Human` - 人間プレイヤーが接続する
@@ -13,7 +15,7 @@ Port = 9696
 # 対局者名（アカウント名）
 # Only A-Z a-z 0-9
 # Names may be at most 10 characters long
-User = 'Otonb'
+User = 'playerb'
 
 # パスワード（任意）
 Pass = ''

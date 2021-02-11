@@ -14,8 +14,8 @@ func main() {
 	// コマンドライン引数
 	entryConfPath := flag.String("entry", "./input/default.entryConf.toml", "*.entryConf.toml file path.")
 	flag.Parse()
-	fmt.Println(flag.Args())
-	fmt.Printf("entryConfPath=%s", *entryConfPath)
+	fmt.Printf("[情報] flag.Args()=%s\n", flag.Args())
+	fmt.Printf("[情報] entryConfPath=%s\n", *entryConfPath)
 
 	// グローバル変数の作成
 	e.G = *new(e.GlobalVariables)
@@ -37,18 +37,18 @@ func main() {
 	// 標準出力への表示と、ログへの書き込みを同時に行います。
 	// e.G.Chat.Trace("Author: %s\n", e.Author)
 
-	// fmt.Println("設定ファイルを読み込んだろ☆（＾～＾）")
+	// fmt.Println("[情報] 設定ファイルを読み込んだろ☆（＾～＾）")
 	entryConf := ui.LoadEntryConf(*entryConfPath) // "./input/default.entryConf.toml"
 
 	// NNGSからのメッセージ受信に対応するプログラムを指定したろ☆（＾～＾）
 	var nngsController e.NngsListener = nil
-	fmt.Printf("(^q^) プレイヤーのタイプ☆ [%s]", entryConf.Nngs.PlayerType)
+	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.Nngs.PlayerType)
 	// Human と決め打ち
 	nngsController = c.NngsHumanController{EntryConf: entryConf}
 
-	fmt.Println("(^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
+	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
 	nngsClient := gateway.NngsClient{}
 	nngsClient.Spawn(entryConf, nngsController)
-	fmt.Println("(^q^) おわり☆！")
+	fmt.Println("[情報] (^q^) おわり☆！")
 
 }
