@@ -1,5 +1,12 @@
 package controller
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muzudho/human-to-nngs/entities/phase"
+)
+
 // EntryConf - 参加設定。
 type EntryConf struct {
 	Nngs             Nngs
@@ -77,9 +84,25 @@ func (config EntryConf) Opponent() string {
 	return config.MatchApplication.Opponent
 }
 
-// Phase - 何路盤
+// Phase - 自分の色
 func (config EntryConf) Phase() string {
 	return config.MatchApplication.Phase
+}
+
+// MyColor - 自分の石の色
+func (config EntryConf) MyColor() (phase.Phase, string) {
+	configuredColorUpperCase := strings.ToUpper(config.MatchApplication.Phase)
+	myPhase := phase.PhaseNone
+	switch configuredColorUpperCase {
+	case "W":
+		myPhase = phase.White
+	case "B":
+		myPhase = phase.Black
+	default:
+		panic(fmt.Sprintf("Unexpected MatchApplication.Phase [%s].", config.MatchApplication.Phase))
+	}
+
+	return myPhase, configuredColorUpperCase
 }
 
 // BoardSize - 何路盤

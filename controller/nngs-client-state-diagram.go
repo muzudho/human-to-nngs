@@ -21,22 +21,19 @@ func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode i
 	// Info
 	case 5:
 		if dia.promptState == 7 {
-			// 対局終了
-			lib.matchEnd()
+			lib.matchEnd() // 対局終了
 		}
 		dia.promptState = 5
 	// PlayingGo
 	case 6:
 		if dia.promptState == 5 {
-			// 対局成立
-			lib.matchStart()
+			lib.matchStart() // 対局成立
 		}
 		dia.promptState = 6
 	// Scoring
 	case 7:
 		if dia.promptState == 6 {
-			// 得点計算
-			lib.scoring()
+			lib.scoring() // 得点計算
 
 			// 本来は 死に石 を選んだりするフェーズだが、
 			// コンピューター囲碁大会では 思考エンジンの自己申告だけ聞き取るので、
@@ -44,7 +41,6 @@ func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode i
 			message := "done\nquit\n"
 			fmt.Printf("[情報] 得点計算は飛ばすぜ☆（＾～＾）対局も終了するぜ☆（＾～＾）[%s]\n", message)
 			oi.LongWrite(lib.writer, []byte(message))
-			// oi.LongWrite(lib.writer, []byte("\n"))
 		}
 		dia.promptState = 7
 	default:
@@ -112,22 +108,10 @@ func (lib *libraryListener) parse() {
 	case clistat.EnteredClientMode:
 		if lib.entryConf.Apply() {
 			// 対局を申し込みます。
-			// 2010/8/25 added by manabe (set color)
-			switch lib.entryConf.Phase() {
-			case "W", "w":
-				// Original code: @color = WHITE
-				lib.MyColor = phase.White
-				message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				fmt.Printf("[情報] 白番として、対局を申し込んだぜ☆（＾～＾）[%s]", message)
-				oi.LongWrite(lib.writer, []byte(message))
-			case "B", "b":
-				lib.MyColor = phase.Black
-				message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				fmt.Printf("[情報] 黒番として、対局を申し込んだぜ☆（＾～＾）[%s]", message)
-				oi.LongWrite(lib.writer, []byte(message))
-			default:
-				panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
-			}
+			_, configuredColorUpperCase := lib.entryConf.MyColor()
+			message := fmt.Sprintf("match %s %s %d %d %d\n", lib.entryConf.Opponent(), configuredColorUpperCase, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
+			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
+			oi.LongWrite(lib.writer, []byte(message))
 		}
 		lib.state = clistat.WaitingInInfo
 	case clistat.WaitingInInfo:
