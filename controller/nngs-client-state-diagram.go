@@ -2,25 +2,33 @@ package controller
 
 // NngsClientStateDiagram - NNGSクライアントの状態遷移図
 type NngsClientStateDiagram struct {
+	// 状態遷移の中の小さな区画
+	stateSub1 int
 }
 
 func (dia *NngsClientStateDiagram) parseSub1(lib *libraryListener, subCode int) {
 	switch subCode {
+	// Info
 	case 5:
-		if lib.stateSub1 == 7 {
-			print("[マッチが終わったぜ☆]")
+		if dia.stateSub1 == 7 {
+			// 対局終了
+			lib.matchEnd()
 		}
-		lib.stateSub1 = 5
+		dia.stateSub1 = 5
+	// PlayingGo
 	case 6:
-		if lib.stateSub1 == 5 {
-			print("[手番が変わったぜ☆]")
+		if dia.stateSub1 == 5 {
+			// 対局成立
+			lib.matchStart()
 		}
-		lib.stateSub1 = 6
+		dia.stateSub1 = 6
+	// Scoring
 	case 7:
-		if lib.stateSub1 == 6 {
-			print("[得点計算だぜ☆]")
+		if dia.stateSub1 == 6 {
+			// 得点計算
+			lib.scoring()
 		}
-		lib.stateSub1 = 7
+		dia.stateSub1 = 7
 	default:
 		// "1 1" とか来ても無視しろだぜ☆（＾～＾）
 	}

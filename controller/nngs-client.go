@@ -33,8 +33,6 @@ type libraryListener struct {
 
 	// 状態遷移
 	state clistat.Clistat
-	// 状態遷移の中の小さな区画
-	stateSub1 int
 
 	// 正規表現
 	regexCommand           regexp.Regexp
@@ -503,4 +501,14 @@ func writeByHuman(w telnet.Writer) {
 		oi.LongWrite(w, scanner.Bytes())
 		oi.LongWrite(w, []byte("\n"))
 	}
+}
+
+func (lib *libraryListener) matchStart() {
+	print("[情報] 手番が変わったぜ☆")
+}
+func (lib *libraryListener) matchEnd() {
+	print("[情報] マッチが終わったぜ☆")
+}
+func (lib *libraryListener) scoring() {
+	print("[情報] 得点計算だぜ☆")
 }
