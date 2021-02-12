@@ -52,6 +52,12 @@ func (lib *libraryListener) parse() {
 	// 現在読み取り中の文字なので、早とちりするかも知れないぜ☆（＾～＾）
 	line := string(lib.lineBuffer[:lib.index])
 
+	/*
+		if lib.newlineReadableState == 2 {
+			print(fmt.Sprintf("[受信] [%s]", line))
+		}
+	*/
+
 	switch lib.state {
 	case clistat.None:
 		// Original code: NngsClient.rb/NNGSClient/`def login`
@@ -117,6 +123,8 @@ func (lib *libraryListener) parse() {
 
 	// '1 5' - Waiting
 	case clistat.WaitingInInfo:
+		lib.newlineReadableState = 1
+
 		// Example: 1 5
 		matches := lib.regexCommand.FindSubmatch(lib.lineBuffer[:lib.index])
 
@@ -204,9 +212,9 @@ func (lib *libraryListener) parse() {
 					// "9 1 5" とか来るが、無視しろだぜ☆（＾～＾）
 				}
 			// Move
-			// Original code: NngsClient.rb/NNGSClient/`def parse_15(code, line)`
 			// Example: `15 Game 2 I: kifuwarabe (0 2289 -1) vs kifuwarabi (0 2298 -1)`.
 			// Example: `15   4(B): J4`.
+			// A1 かもしれないし、 A12 かも知れず、いつコマンドが完了するか分からないので、２回以上実行されることはある。
 			case 15:
 				// print("15だぜ☆")
 				doing := true

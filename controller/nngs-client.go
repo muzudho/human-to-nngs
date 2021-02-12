@@ -20,6 +20,9 @@ type NngsClient struct {
 type libraryListener struct {
 	entryConf EntryConf
 
+	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
+	newlineReadableState uint
+
 	// NNGSへ書込み
 	writer telnet.Writer
 	// NNGSへ読込み
@@ -146,16 +149,49 @@ func (lib *libraryListener) read() {
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
 			lib.parse()
 
-			// 行末は、送られてくるケースと、送られてこないケースがあるぜ☆（＾～＾）
+			// `Login:` のように 改行が送られてこないケースはあるが、
+			// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
 			if bytes[0] == '\n' {
 				lib.index = 0
+
+				if lib.newlineReadableState == 1 {
+					lib.newlineReadableState = 2
+					//break // for文を抜ける
+				}
 			}
 		}
 
 		if nil != err {
-			break // 相手が切断したなどの理由でエラーになるので、終了します。
+			return // 相手が切断したなどの理由でエラーになるので、終了します。
 		}
 	}
+
+	/*
+		// 改行が送られてくるものと考えるぜ☆（＾～＾）
+		// これで、１行ずつ読み込めるな☆（＾～＾）
+		for {
+			n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+
+			if n > 0 {
+				bytes := p[:n]
+				lib.lineBuffer[lib.index] = bytes[0]
+				lib.index++
+
+				// `Login:` のように 改行が送られてこないケースはあるが、
+				// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
+				if bytes[0] == '\n' {
+					// 1行をパースします
+					lib.parse()
+
+					lib.index = 0
+				}
+			}
+
+			if nil != err {
+				return // 相手が切断したなどの理由でエラーになるので、終了します。
+			}
+		}
+	*/
 }
 
 // 簡易表示モードに切り替えます。
