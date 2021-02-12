@@ -22,6 +22,9 @@ type NngsClient struct {
 type libraryListener struct {
 	entryConf EntryConf
 
+	// NNGSクライアントの状態遷移図
+	nngsClientStateDiagram NngsClientStateDiagram
+
 	// NNGSの動作をリスニングします
 	nngsListener NngsListener
 	// １行で 1024 byte は飛んでこないことをサーバーと決めておけだぜ☆（＾～＾）
@@ -88,6 +91,7 @@ type libraryListener struct {
 func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) error {
 	listener := libraryListener{
 		entryConf:              entryConf,
+		nngsClientStateDiagram: *new(NngsClientStateDiagram),
 		nngsListener:           nngsListener,
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
@@ -246,7 +250,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 			case 1:
 				subCode, err := strconv.Atoi(commandCode)
 				if err == nil {
-					lib.parseSub1(w, subCode)
+					lib.nngsClientStateDiagram.parseSub1(lib, subCode)
 				}
 
 			case 9:
@@ -315,7 +319,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 					// self.match_cancel
 				} else if lib.regexOneSeven.Match(commandBodyBytes) {
 					print("[サブ遷移へ☆]")
-					lib.parseSub1(w, 7)
+					lib.nngsClientStateDiagram.parseSub1(lib, 7)
 				} else {
 					// "9 1 5" とか来るが、無視しろだぜ☆（＾～＾）
 				}
@@ -465,28 +469,6 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
 		panic(fmt.Sprintf("Unexpected state transition. state=%d", lib.state))
-	}
-}
-
-func (lib *libraryListener) parseSub1(w telnet.Writer, subCode int) {
-	switch subCode {
-	case 5:
-		if lib.stateSub1 == 7 {
-			print("[マッチが終わったぜ☆]")
-		}
-		lib.stateSub1 = 5
-	case 6:
-		if lib.stateSub1 == 5 {
-			print("[手番が変わったぜ☆]")
-		}
-		lib.stateSub1 = 6
-	case 7:
-		if lib.stateSub1 == 6 {
-			print("[得点計算だぜ☆]")
-		}
-		lib.stateSub1 = 7
-	default:
-		// "1 1" とか来ても無視しろだぜ☆（＾～＾）
 	}
 }
 
