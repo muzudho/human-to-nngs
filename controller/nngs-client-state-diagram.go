@@ -57,11 +57,11 @@ func (lib *libraryListener) parse() {
 	// 現在読み取り中の文字なので、早とちりするかも知れないぜ☆（＾～＾）
 	line := string(lib.lineBuffer[:lib.index])
 
-	/*
-		if lib.newlineReadableState == 2 {
-			print(fmt.Sprintf("受信[%s]\n", line))
-		}
-		// */
+	//*
+	//if lib.newlineReadableState == 2 {
+	print(fmt.Sprintf("受信[%s]\n", line))
+	//}
+	// */
 
 	switch lib.state {
 	case clistat.None:
@@ -155,7 +155,7 @@ func (lib *libraryListener) parse() {
 					matches2 := lib.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
-						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）accept[%s],decline[%s]\n", matches2[1], matches2[2])
+						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）[%s] accept[%s],decline[%s]\n", string(promptStateBytes), matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
 						lib.CommandOfMatchAccept = string(matches2[1])

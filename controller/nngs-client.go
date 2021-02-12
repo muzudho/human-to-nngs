@@ -99,8 +99,8 @@ func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) e
 		nngsListener:           nngsListener,
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
-		regexUseMatch:          *regexp.MustCompile("^Use <match"),                         // (2021-02-12) 先頭付近に '9 ' 追加。
-		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond."), // (2021-02-11)末尾に $ 追加☆（＾～＾） // (2021-02-12) 先頭付近に '9 ' 追加。
+		regexUseMatch:          *regexp.MustCompile("^Use <match"),
+		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond."), // 頭の '9 ' は先に削ってあるから ここに含めない（＾～＾）
 		regexMatchAccepted:     *regexp.MustCompile("^Match \\[.+?\\] with (\\S+?) in \\S+? accepted."),
 		regexDecline1:          *regexp.MustCompile("declines your request for a match."),
 		regexDecline2:          *regexp.MustCompile("You decline the match offer from"),
