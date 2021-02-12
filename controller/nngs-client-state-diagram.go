@@ -16,7 +16,7 @@ type NngsClientStateDiagram struct {
 	promptState int
 }
 
-func (dia *NngsClientStateDiagram) parseSub1(lib *libraryListener, subCode int) {
+func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode int) {
 	switch subCode {
 	// Info
 	case 5:
@@ -110,19 +110,19 @@ func (lib *libraryListener) parse() {
 				// Original code: @color = WHITE
 				lib.MyColor = phase.White
 				message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
+				fmt.Printf("[情報] 白番として、対局を申し込んだぜ☆（＾～＾）[%s]", message)
 				oi.LongWrite(lib.writer, []byte(message))
 			case "B", "b":
 				lib.MyColor = phase.Black
 				message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-				// fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
+				fmt.Printf("[情報] 黒番として、対局を申し込んだぜ☆（＾～＾）[%s]", message)
 				oi.LongWrite(lib.writer, []byte(message))
 			default:
 				panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
 			}
 		}
-		lib.state = clistat.WaitingInTheLobby
-	case clistat.WaitingInTheLobby:
+		lib.state = clistat.WaitingInInfo
+	case clistat.WaitingInInfo:
 		// /^(\d+) (.*)/
 		// if lib.regexCommand.MatchString(line) {
 		// 	// コマンドの形をしていたぜ☆（＾～＾）
@@ -143,14 +143,16 @@ func (lib *libraryListener) parse() {
 				panic(err)
 			}
 			switch code {
+			// Prompt
 			case 1:
 				promptState := string(promptStateBytes)
 				promptStateNum, err := strconv.Atoi(promptState)
 				if err == nil {
-					lib.nngsClientStateDiagram.parseSub1(lib, promptStateNum)
+					lib.nngsClientStateDiagram.promptDiagram(lib, promptStateNum)
 				}
-
+			// Info
 			case 9:
+				// parse_9
 				// print("[9だぜ☆]")
 				if lib.regexUseMatch.Match(promptStateBytes) {
 					matches2 := lib.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
@@ -165,44 +167,58 @@ func (lib *libraryListener) parse() {
 						// Example: `decline kifuwarabi`
 						lib.CommandOfMatchDecline = string(matches2[2])
 
-						// acceptコマンドを半角空白でスプリットした３番目が手番
-						myColor := strings.Split(lib.CommandOfMatchAccept, " ")[2]
-						switch myColor {
-						case "W":
-							lib.MyColor = phase.White
-						case "B":
-							lib.MyColor = phase.Black
-						default:
-							panic(fmt.Sprintf("Unexpected phase [%s].", myColor))
-						}
-						// match_accept
-						matches3 := lib.regexAcceptCommand.FindSubmatch(commandCodeBytes)
-						if 5 < len(matches3) {
-							boardSize, err := strconv.ParseUint(string(matches3[1]), 10, 0)
-							if err != nil {
-								panic(err)
-							}
-							lib.BoardSize = uint(boardSize)
-							fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", lib.BoardSize)
+						// match_request
+						// request
+						// ask_match
+						// puts 'match requested. accept? (Y/n):'
+						// コンピューター・プレイヤーなら常に承諾します。
+						// message := fmt.Sprintf("%s\n", lib.CommandOfMatchAccept)
+						// oi.LongWrite(lib.writer, []byte(message))
+
+						// acceptコマンドを半角空白でスプリットした３番目が、申し込んできた方の手番
+						matchAcceptTokens := strings.Split(lib.CommandOfMatchAccept, " ")
+						if len(matchAcceptTokens) < 6 {
+							panic(fmt.Sprintf("Error matchAcceptTokens=[%s].", matchAcceptTokens))
 						}
 
+						opponentPlayerName := matchAcceptTokens[1]
+
+						opponentColor := matchAcceptTokens[2]
+						opponentColorUppercase := strings.ToUpper(opponentColor)
+						switch opponentColor {
+						case "W":
+							lib.MyColor = phase.Black
+						case "B":
+							lib.MyColor = phase.White
+						default:
+							panic(fmt.Sprintf("Unexpected opponentColor=%s.", opponentColor))
+						}
+						boardSize, err := strconv.ParseUint(matchAcceptTokens[3], 10, 0)
+						if err != nil {
+							panic(err)
+						}
+						lib.BoardSize = uint(boardSize)
+						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", lib.BoardSize)
+
+						configuredColor := phase.PhaseNone
 						switch lib.entryConf.Phase() {
 						case "W", "w":
 							// Original code: @color = WHITE
-							lib.MyColor = phase.White
-							message := fmt.Sprintf("match %s W %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							fmt.Printf("[情報] 白へ対局を申し込むぜ☆（＾～＾）[%s]\n", message)
-							oi.LongWrite(lib.writer, []byte(message))
+							configuredColor = phase.White
 						case "B", "b":
-							lib.MyColor = phase.Black
-							message := fmt.Sprintf("match %s B %d %d %d\n", lib.entryConf.Opponent(), lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
-							fmt.Printf("[情報] 黒へ対局を申し込むぜ☆（＾～＾）[%s]\n", message)
-							oi.LongWrite(lib.writer, []byte(message))
+							configuredColor = phase.Black
 						default:
 							panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
 						}
 
-						respondToMatchApplication(lib.writer, lib.CommandOfMatchAccept, lib.CommandOfMatchDecline)
+						if lib.MyColor != configuredColor {
+							panic(fmt.Sprintf("Unexpected phase. lib.MyColor=%d configuredColor=%d.", lib.MyColor, configuredColor))
+						}
+
+						// cmd_match
+						message := fmt.Sprintf("match %s %s %d %d %d\n", opponentPlayerName, opponentColorUppercase, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
+						fmt.Printf("[情報] 対局を申し込むぜ☆（＾～＾）[%s]\n", message)
+						oi.LongWrite(lib.writer, []byte(message))
 					}
 				} else if lib.regexMatchAccepted.Match(promptStateBytes) {
 					// 黒の手番から始まるぜ☆（＾～＾）
@@ -216,11 +232,11 @@ func (lib *libraryListener) parse() {
 					// self.match_cancel
 				} else if lib.regexOneSeven.Match(promptStateBytes) {
 					print("[サブ遷移へ☆]")
-					lib.nngsClientStateDiagram.parseSub1(lib, 7)
+					lib.nngsClientStateDiagram.promptDiagram(lib, 7)
 				} else {
 					// "9 1 5" とか来るが、無視しろだぜ☆（＾～＾）
 				}
-			// マッチ確立の合図を得たときだぜ☆（＾～＾）
+			// Move
 			// Original code: NngsClient.rb/NNGSClient/`def parse_15(code, line)`
 			// Example: `15 Game 2 I: kifuwarabe (0 2289 -1) vs kifuwarabi (0 2298 -1)`.
 			// Example: `15   4(B): J4`.
@@ -235,7 +251,7 @@ func (lib *libraryListener) parse() {
 					matches2 := lib.regexGame.FindSubmatch(promptStateBytes)
 					if 10 < len(matches2) {
 						// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
-						// fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
+						fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
 
 						// ゲームID
 						// Original code: @gameid
@@ -296,10 +312,11 @@ func (lib *libraryListener) parse() {
 							panic(fmt.Sprintf("Unexpected phase %s", string(matches2[2])))
 						}
 
+						fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
 						if lib.MyColor == lib.Phase {
 							// 自分の手番だぜ☆（＾～＾）！
 							lib.OpponentMove = string(matches2[3]) // 相手の指し手が付いてくるので記憶
-							fmt.Printf("[情報] 自分の手番で一旦ブロッキング☆（＾～＾）")
+							fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 							lib.state = clistat.BlockingMyTurn
 

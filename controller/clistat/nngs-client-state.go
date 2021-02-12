@@ -13,8 +13,8 @@ const (
 	EnteredMyPasswordAndIAmWaitingToBePrompted
 	// EnteredClientMode - 簡易表示モードに設定しました
 	EnteredClientMode
-	// WaitingInTheLobby - 対局が申し込まれるのをロビーで待ちます
-	WaitingInTheLobby
+	// WaitingInInfo - 対局が申し込まれるのを '1 5 Waiting' (ロビー相当)で待ちます
+	WaitingInInfo
 	// BlockingMyTurn - 自分の手番で受信はブロック中です。
 	BlockingMyTurn
 	// BlockingOpponentTurn - 相手の手番で受信はブロック中です。

@@ -111,6 +111,8 @@ func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) e
 // CallTELNET - 決まった形のメソッド。
 func (lib libraryListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
+	print("[情報] 受信開始☆")
+
 	lib.writer = w
 	lib.reader = r
 
@@ -164,26 +166,11 @@ func setClientMode(w telnet.Writer) {
 	oi.LongWrite(w, []byte("set client true\n"))
 }
 
-// 申込みに応えます。
-// Original code: match_request(), ask_match().
-func respondToMatchApplication(w telnet.Writer, accept string, decline string) {
-	// 人間プレイヤーなら、尋ねて応答を待ちます。
-	// 'match requested. accept? (Y/n):'
-	// if no
-	//   match_cancel
-	// else
-	//   match_ok
-
-	// コンピューター・プレイヤーなら常に承諾します。
-	message := fmt.Sprintf("%s\n", accept)
-	oi.LongWrite(w, []byte(message))
-}
-
 func (lib *libraryListener) matchStart() {
-	print("[情報] 手番が変わったぜ☆")
+	print("[情報] 対局成立だぜ☆")
 }
 func (lib *libraryListener) matchEnd() {
-	print("[情報] マッチが終わったぜ☆")
+	print("[情報] 対局終了だぜ☆")
 }
 func (lib *libraryListener) scoring() {
 	print("[情報] 得点計算だぜ☆")
