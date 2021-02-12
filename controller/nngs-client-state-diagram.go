@@ -13,32 +13,32 @@ import (
 // NngsClientStateDiagram - NNGSクライアントの状態遷移図
 type NngsClientStateDiagram struct {
 	// 状態遷移の中の小さな区画
-	stateSub1 int
+	promptState int
 }
 
 func (dia *NngsClientStateDiagram) parseSub1(lib *libraryListener, subCode int) {
 	switch subCode {
 	// Info
 	case 5:
-		if dia.stateSub1 == 7 {
+		if dia.promptState == 7 {
 			// 対局終了
 			lib.matchEnd()
 		}
-		dia.stateSub1 = 5
+		dia.promptState = 5
 	// PlayingGo
 	case 6:
-		if dia.stateSub1 == 5 {
+		if dia.promptState == 5 {
 			// 対局成立
 			lib.matchStart()
 		}
-		dia.stateSub1 = 6
+		dia.promptState = 6
 	// Scoring
 	case 7:
-		if dia.stateSub1 == 6 {
+		if dia.promptState == 6 {
 			// 得点計算
 			lib.scoring()
 		}
-		dia.stateSub1 = 7
+		dia.promptState = 7
 	default:
 		// "1 1" とか来ても無視しろだぜ☆（＾～＾）
 	}
@@ -135,8 +135,7 @@ func (lib *libraryListener) parse() {
 		if 2 < len(matches) {
 			commandCodeBytes := matches[1]
 			commandCode := string(commandCodeBytes)
-			commandBodyBytes := matches[2]
-			// commandBody := string(commandBodyBytes)
+			promptStateBytes := matches[2]
 
 			code, err := strconv.Atoi(commandCode)
 			if err != nil {
@@ -145,15 +144,16 @@ func (lib *libraryListener) parse() {
 			}
 			switch code {
 			case 1:
-				subCode, err := strconv.Atoi(commandCode)
+				promptState := string(promptStateBytes)
+				promptStateNum, err := strconv.Atoi(promptState)
 				if err == nil {
-					lib.nngsClientStateDiagram.parseSub1(lib, subCode)
+					lib.nngsClientStateDiagram.parseSub1(lib, promptStateNum)
 				}
 
 			case 9:
 				// print("[9だぜ☆]")
-				if lib.regexUseMatch.Match(commandBodyBytes) {
-					matches2 := lib.regexUseMatchToRespond.FindSubmatch(commandBodyBytes)
+				if lib.regexUseMatch.Match(promptStateBytes) {
+					matches2 := lib.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
 						// Original code: cmd_match_ok
@@ -204,17 +204,17 @@ func (lib *libraryListener) parse() {
 
 						respondToMatchApplication(lib.writer, lib.CommandOfMatchAccept, lib.CommandOfMatchDecline)
 					}
-				} else if lib.regexMatchAccepted.Match(commandBodyBytes) {
+				} else if lib.regexMatchAccepted.Match(promptStateBytes) {
 					// 黒の手番から始まるぜ☆（＾～＾）
 					lib.Phase = phase.Black
 
-				} else if lib.regexDecline1.Match(commandBodyBytes) {
+				} else if lib.regexDecline1.Match(promptStateBytes) {
 					print("[対局はキャンセルされたぜ☆]")
 					// self.match_cancel
-				} else if lib.regexDecline2.Match(commandBodyBytes) {
+				} else if lib.regexDecline2.Match(promptStateBytes) {
 					print("[対局はキャンセルされたぜ☆]")
 					// self.match_cancel
-				} else if lib.regexOneSeven.Match(commandBodyBytes) {
+				} else if lib.regexOneSeven.Match(promptStateBytes) {
 					print("[サブ遷移へ☆]")
 					lib.nngsClientStateDiagram.parseSub1(lib, 7)
 				} else {
@@ -232,7 +232,7 @@ func (lib *libraryListener) parse() {
 				// 自分が指すタイミングと、相手が指すタイミングのどちらでも流れてくるぜ☆（＾～＾）
 				// とりあえずゲーム情報を全部変数に入れとけばあとで使える☆（＾～＾）
 				if doing {
-					matches2 := lib.regexGame.FindSubmatch(commandBodyBytes)
+					matches2 := lib.regexGame.FindSubmatch(promptStateBytes)
 					if 10 < len(matches2) {
 						// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
 						// fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
@@ -281,7 +281,7 @@ func (lib *libraryListener) parse() {
 
 				// 指し手はこっちだぜ☆（＾～＾）
 				if doing {
-					matches2 := lib.regexMove.FindSubmatch(commandBodyBytes)
+					matches2 := lib.regexMove.FindSubmatch(promptStateBytes)
 					if 3 < len(matches2) {
 						// Original code: @lastmove = [$1, $2, $3]
 						fmt.Printf("[情報] 指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches2[1], matches2[2], matches2[3])
