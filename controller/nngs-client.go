@@ -143,8 +143,11 @@ func (lib *libraryListener) read() {
 			bytes := p[:n]
 			lib.lineBuffer[lib.index] = bytes[0]
 			lib.index++
-			// [受信] 割り込みで 改行がない行も届くので、改行が届くまで待つという処理ができません。
-			print(string(bytes)) // 受け取るたびに１文字ずつ表示。
+
+			if lib.newlineReadableState < 2 {
+				// [受信] 割り込みで 改行がない行も届くので、改行が届くまで待つという処理ができません。
+				print(string(bytes)) // 受け取るたびに１文字ずつ表示。
+			}
 
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
 			lib.parse()
