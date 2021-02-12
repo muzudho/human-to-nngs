@@ -1,4 +1,4 @@
-package entities
+package usecases
 
 import (
 	"fmt"

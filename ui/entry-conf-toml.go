@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	c "github.com/muzudho/human-to-nngs/controller"
-	e "github.com/muzudho/human-to-nngs/entities"
+	u "github.com/muzudho/human-to-nngs/usecases"
 	"github.com/pelletier/go-toml"
 )
 
@@ -17,7 +17,7 @@ func LoadEntryConf(path string) c.EntryConf {
 	// ファイル読込
 	fileData, err := ioutil.ReadFile(path)
 	if err != nil {
-		e.G.Chat.Fatal("path=%s", path)
+		u.G.Chat.Fatal("path=%s", path)
 		panic(err)
 	}
 

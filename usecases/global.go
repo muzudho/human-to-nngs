@@ -1,4 +1,4 @@
-package entities
+package usecases
 
 // GlobalVariables - グローバル変数。
 type GlobalVariables struct {

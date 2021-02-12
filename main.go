@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	c "github.com/muzudho/human-to-nngs/controller"
-	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/muzudho/human-to-nngs/ui"
+	u "github.com/muzudho/human-to-nngs/usecases"
 )
 
 func main() {
@@ -17,10 +17,10 @@ func main() {
 	fmt.Printf("[情報] entryConfPath=%s\n", *entryConfPath)
 
 	// グローバル変数の作成
-	e.G = *new(e.GlobalVariables)
+	u.G = *new(u.GlobalVariables)
 
 	// ロガーの作成。
-	e.G.Log = *e.NewLogger(
+	u.G.Log = *u.NewLogger(
 		"output/trace.log",
 		"output/debug.log",
 		"output/info.log",
@@ -31,7 +31,7 @@ func main() {
 		"output/print.log")
 
 	// チャッターの作成。 標準出力とロガーを一緒にしただけです。
-	e.G.Chat = *e.NewChatter(e.G.Log)
+	u.G.Chat = *u.NewChatter(u.G.Log)
 
 	// 標準出力への表示と、ログへの書き込みを同時に行います。
 	// e.G.Chat.Trace("Author: %s\n", e.Author)
