@@ -20,6 +20,11 @@ func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode i
 	switch subCode {
 	// Info
 	case 5:
+		if dia.promptState == 0 {
+			// このフラグを立てるのは初回だけ。
+			lib.newlineReadableState = 1
+		}
+
 		if dia.promptState == 7 {
 			lib.matchEnd() // 対局終了
 		}
@@ -54,9 +59,9 @@ func (lib *libraryListener) parse() {
 
 	/*
 		if lib.newlineReadableState == 2 {
-			print(fmt.Sprintf("[受信] [%s]", line))
+			print(fmt.Sprintf("受信[%s]\n", line))
 		}
-	*/
+		// */
 
 	switch lib.state {
 	case clistat.None:
@@ -123,8 +128,6 @@ func (lib *libraryListener) parse() {
 
 	// '1 5' - Waiting
 	case clistat.WaitingInInfo:
-		lib.newlineReadableState = 1
-
 		// Example: 1 5
 		matches := lib.regexCommand.FindSubmatch(lib.lineBuffer[:lib.index])
 

@@ -99,8 +99,8 @@ func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) e
 		nngsListener:           nngsListener,
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
-		regexUseMatch:          *regexp.MustCompile("^Use <match"),
-		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond.$"), // (2021-02-11)末尾に $ 追加☆（＾～＾）
+		regexUseMatch:          *regexp.MustCompile("^Use <match"),                         // (2021-02-12) 先頭付近に '9 ' 追加。
+		regexUseMatchToRespond: *regexp.MustCompile("^Use <(.+?)> or <(.+?)> to respond."), // (2021-02-11)末尾に $ 追加☆（＾～＾） // (2021-02-12) 先頭付近に '9 ' 追加。
 		regexMatchAccepted:     *regexp.MustCompile("^Match \\[.+?\\] with (\\S+?) in \\S+? accepted."),
 		regexDecline1:          *regexp.MustCompile("declines your request for a match."),
 		regexDecline2:          *regexp.MustCompile("You decline the match offer from"),
@@ -156,7 +156,7 @@ func (lib *libraryListener) read() {
 
 				if lib.newlineReadableState == 1 {
 					lib.newlineReadableState = 2
-					//break // for文を抜ける
+					// break // for文を抜ける
 				}
 			}
 		}
@@ -172,26 +172,32 @@ func (lib *libraryListener) read() {
 		for {
 			n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
-			if n > 0 {
-				bytes := p[:n]
-				lib.lineBuffer[lib.index] = bytes[0]
-				lib.index++
-
-				// `Login:` のように 改行が送られてこないケースはあるが、
-				// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
-				if bytes[0] == '\n' {
-					// 1行をパースします
-					lib.parse()
-
-					lib.index = 0
-				}
-			}
-
 			if nil != err {
 				return // 相手が切断したなどの理由でエラーになるので、終了します。
 			}
+
+			if n > 0 {
+				bytes := p[:n]
+
+				if bytes[0] == '\r' {
+					// Windows では、 \r\n と続いてくるものと想定します。
+					// Linux なら \r はこないものと想定します。
+					continue
+
+				} else if bytes[0] == '\n' {
+					// `Login:` のように 改行が送られてこないケースはあるが、
+					// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
+					// 1行をパースします
+					lib.parse()
+					lib.index = 0
+
+				} else {
+					lib.lineBuffer[lib.index] = bytes[0]
+					lib.index++
+				}
+			}
 		}
-	*/
+		// */
 }
 
 // 簡易表示モードに切り替えます。
