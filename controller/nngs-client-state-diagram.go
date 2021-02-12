@@ -114,16 +114,13 @@ func (lib *libraryListener) parse() {
 			oi.LongWrite(lib.writer, []byte(message))
 		}
 		lib.state = clistat.WaitingInInfo
+
+	// '1 5' - Waiting
 	case clistat.WaitingInInfo:
-		// /^(\d+) (.*)/
-		// if lib.regexCommand.MatchString(line) {
-		// 	// コマンドの形をしていたぜ☆（＾～＾）
-		// 	// fmt.Printf("[情報] 何かコマンドかだぜ☆（＾～＾）？[%s]", line)
-		// }
+		// Example: 1 5
 		matches := lib.regexCommand.FindSubmatch(lib.lineBuffer[:lib.index])
 
 		//fmt.Printf("[情報] m[%s]", matches)
-		//print(matches)
 		if 2 < len(matches) {
 			commandCodeBytes := matches[1]
 			commandCode := string(commandCodeBytes)
@@ -131,8 +128,7 @@ func (lib *libraryListener) parse() {
 
 			code, err := strconv.Atoi(commandCode)
 			if err != nil {
-				// 想定外の遷移だぜ☆（＾～＾）！
-				panic(err)
+				panic(err) // 想定外の遷移だぜ☆（＾～＾）！
 			}
 			switch code {
 			// Prompt
@@ -144,28 +140,16 @@ func (lib *libraryListener) parse() {
 				}
 			// Info
 			case 9:
-				// parse_9
-				// print("[9だぜ☆]")
 				if lib.regexUseMatch.Match(promptStateBytes) {
 					matches2 := lib.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
-						// Original code: cmd_match_ok
-						// 3回ぐらい ここを通るような？.
 						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）accept[%s],decline[%s]\n", matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
 						lib.CommandOfMatchAccept = string(matches2[1])
 						// Example: `decline kifuwarabi`
 						lib.CommandOfMatchDecline = string(matches2[2])
-
-						// match_request
-						// request
-						// ask_match
-						// puts 'match requested. accept? (Y/n):'
-						// コンピューター・プレイヤーなら常に承諾します。
-						// message := fmt.Sprintf("%s\n", lib.CommandOfMatchAccept)
-						// oi.LongWrite(lib.writer, []byte(message))
 
 						// acceptコマンドを半角空白でスプリットした３番目が、申し込んできた方の手番
 						matchAcceptTokens := strings.Split(lib.CommandOfMatchAccept, " ")
@@ -192,16 +176,7 @@ func (lib *libraryListener) parse() {
 						lib.BoardSize = uint(boardSize)
 						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", lib.BoardSize)
 
-						configuredColor := phase.PhaseNone
-						switch lib.entryConf.Phase() {
-						case "W", "w":
-							// Original code: @color = WHITE
-							configuredColor = phase.White
-						case "B", "b":
-							configuredColor = phase.Black
-						default:
-							panic(fmt.Sprintf("Unexpected phase [%s].", lib.entryConf.Phase()))
-						}
+						configuredColor, _ := lib.entryConf.MyColor()
 
 						if lib.MyColor != configuredColor {
 							panic(fmt.Sprintf("Unexpected phase. lib.MyColor=%d configuredColor=%d.", lib.MyColor, configuredColor))
