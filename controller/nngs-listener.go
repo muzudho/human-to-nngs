@@ -1,4 +1,4 @@
-package entities
+package controller
 
 // NngsListener - NNGS からの受信メッセージをさばきます。
 type NngsListener interface {

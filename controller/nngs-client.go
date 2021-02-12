@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/muzudho/human-to-nngs/controller/clistat"
-	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/muzudho/human-to-nngs/entities/phase"
 	"github.com/reiver/go-oi"
 	"github.com/reiver/go-telnet"
@@ -24,7 +23,7 @@ type libraryListener struct {
 	entryConf EntryConf
 
 	// NNGSの動作をリスニングします
-	nngsListener e.NngsListener
+	nngsListener NngsListener
 	// １行で 1024 byte は飛んでこないことをサーバーと決めておけだぜ☆（＾～＾）
 	lineBuffer [1024]byte
 	index      uint
@@ -86,7 +85,7 @@ type libraryListener struct {
 }
 
 // Spawn - クライアント接続
-func (client NngsClient) Spawn(entryConf EntryConf, nngsListener e.NngsListener) error {
+func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) error {
 	listener := libraryListener{
 		entryConf:              entryConf,
 		nngsListener:           nngsListener,
