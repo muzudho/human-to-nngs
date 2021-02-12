@@ -22,6 +22,9 @@ type NngsClient struct {
 type libraryListener struct {
 	entryConf EntryConf
 
+	// NNGSへ書込み
+	writer telnet.Writer
+
 	// NNGSクライアントの状態遷移図
 	nngsClientStateDiagram NngsClientStateDiagram
 
@@ -88,7 +91,8 @@ type libraryListener struct {
 // Spawn - クライアント接続
 func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) error {
 	listener := libraryListener{
-		entryConf:              entryConf,
+		entryConf: entryConf,
+		// writer:                 w,
 		nngsClientStateDiagram: *new(NngsClientStateDiagram),
 		nngsListener:           nngsListener,
 		index:                  0,
@@ -108,13 +112,15 @@ func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) e
 // CallTELNET - 決まった形のメソッド。
 func (lib libraryListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
-	go lib.read(w, r)
+	lib.writer = w
+
+	go lib.read(r)
 
 	writeByHuman(w)
 }
 
 // 送られてくるメッセージを待ち構えるループです。
-func (lib *libraryListener) read(w telnet.Writer, r telnet.Reader) {
+func (lib *libraryListener) read(r telnet.Reader) {
 	var buffer [1]byte // これが満たされるまで待つ。1バイト。
 	p := buffer[:]
 
@@ -129,7 +135,7 @@ func (lib *libraryListener) read(w telnet.Writer, r telnet.Reader) {
 			print(string(bytes)) // 受け取るたびに１文字ずつ表示。
 
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
-			lib.parse(w)
+			lib.parse(lib.writer)
 
 			// 行末を判定できるか☆（＾～＾）？
 			if bytes[0] == '\n' {
