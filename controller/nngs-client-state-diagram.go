@@ -312,60 +312,58 @@ func (lib *libraryListener) parse() {
 							panic(fmt.Sprintf("Unexpected phase %s", string(matches2[2])))
 						}
 
-						fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
-						if lib.MyColor == lib.Phase {
-							// 自分の手番だぜ☆（＾～＾）！
-							lib.OpponentMove = string(matches2[3]) // 相手の指し手が付いてくるので記憶
-							fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
-							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-							lib.state = clistat.BlockingMyTurn
+						/*
+							fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
+							if lib.MyColor == lib.Phase {
+								// 自分の手番だぜ☆（＾～＾）！
+								lib.OpponentMove = string(matches2[3]) // 相手の指し手が付いてくるので記憶
+								fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
+								// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
+								lib.state = clistat.BlockingMyTurn
 
-							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
-							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-							lib.nngsListener.MyPhase()
+								// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
+								// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
+								lib.nngsListener.MyPhase()
 
-							// @gtp.time_left('WHITE', @nngs.white_user[2])
-							// @gtp.time_left('BLACK', @nngs.black_user[2])
-							/*
-							   mv, c = @gtp.genmove
-							   if mv.nil?
-							     mv = 'PASS'
-							   elsif mv == "resign"
+								// @gtp.time_left('WHITE', @nngs.white_user[2])
+								// @gtp.time_left('BLACK', @nngs.black_user[2])
+								//    mv, c = @gtp.genmove
+								//    if mv.nil?
+								//      mv = 'PASS'
+								//    elsif mv == "resign"
 
-							   else
-							     i, j = mv
-							     mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
-							     mv = "#{mv}#{j}"
-							   end
-							   @nngs.input mv
-							*/
-						} else {
-							// 相手の手番だぜ☆（＾～＾）！
-							lib.MyMove = string(matches2[3]) // 自分の指し手が付いてくるので記憶
-							fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
-							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-							lib.state = clistat.BlockingOpponentTurn
+								//    else
+								//      i, j = mv
+								//      mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
+								//      mv = "#{mv}#{j}"
+								//    end
+								//    @nngs.input mv
+							} else {
+								// 相手の手番だぜ☆（＾～＾）！
+								lib.MyMove = string(matches2[3]) // 自分の指し手が付いてくるので記憶
+								fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
+								// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
+								lib.state = clistat.BlockingOpponentTurn
 
-							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
-							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-							lib.nngsListener.OpponentPhase()
+								// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
+								// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
+								lib.nngsListener.OpponentPhase()
 
-							// lib.
-							/*
-								      mv = if move == 'Pass'
-								             nil
-								           elsif move.downcase[/resign/] == "resign"
-								             "resign"
-								           else
-								             i = move.upcase[0].ord - ?A.ord + 1
-									         i = i - 1 if i > ?I.ord - ?A.ord
-								             j = move[/[0-9]+/].to_i
-								             [i, j]
-								           end
-								#      p [mv, @his_color]
-								      @gtp.playmove([mv, @his_color])
-							*/
-						}
+								// lib.
+								//       mv = if move == 'Pass'
+								//              nil
+								//            elsif move.downcase[/resign/] == "resign"
+								//              "resign"
+								//            else
+								//              i = move.upcase[0].ord - ?A.ord + 1
+								// 	         i = i - 1 if i > ?I.ord - ?A.ord
+								//              j = move[/[0-9]+/].to_i
+								//              [i, j]
+								//            end
+								// #      p [mv, @his_color]
+								//       @gtp.playmove([mv, @his_color])
+							}
+						*/
 
 						doing = false
 					}
