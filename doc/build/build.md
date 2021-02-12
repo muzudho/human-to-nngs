@@ -1,5 +1,0 @@
-# Build
-
-```shell
-go build
-```
