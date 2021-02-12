@@ -1,4 +1,4 @@
-package gateway
+package controller
 
 import (
 	"bufio"
@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	c "github.com/muzudho/human-to-nngs/controller"
 	"github.com/muzudho/human-to-nngs/controller/clistat"
 	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/muzudho/human-to-nngs/entities/phase"
@@ -22,7 +21,7 @@ type NngsClient struct {
 
 // `github.com/reiver/go-telnet` ライブラリーの動作をリスニングします
 type libraryListener struct {
-	entryConf c.EntryConf
+	entryConf EntryConf
 
 	// NNGSの動作をリスニングします
 	nngsListener e.NngsListener
@@ -87,7 +86,7 @@ type libraryListener struct {
 }
 
 // Spawn - クライアント接続
-func (client NngsClient) Spawn(entryConf c.EntryConf, nngsListener e.NngsListener) error {
+func (client NngsClient) Spawn(entryConf EntryConf, nngsListener e.NngsListener) error {
 	listener := libraryListener{
 		entryConf:              entryConf,
 		nngsListener:           nngsListener,
@@ -406,7 +405,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 
 							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-							lib.nngsListener.NoticeMyPhase()
+							lib.nngsListener.MyPhase()
 
 							// @gtp.time_left('WHITE', @nngs.white_user[2])
 							// @gtp.time_left('BLACK', @nngs.black_user[2])
@@ -432,7 +431,7 @@ func (lib *libraryListener) parse(w telnet.Writer) {
 
 							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-							lib.nngsListener.NoticeOpponentPhase()
+							lib.nngsListener.OpponentPhase()
 
 							// lib.
 							/*

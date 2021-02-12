@@ -6,7 +6,6 @@ import (
 
 	c "github.com/muzudho/human-to-nngs/controller"
 	e "github.com/muzudho/human-to-nngs/entities"
-	"github.com/muzudho/human-to-nngs/gateway"
 	"github.com/muzudho/human-to-nngs/ui"
 )
 
@@ -47,7 +46,7 @@ func main() {
 	nngsController = c.NngsHumanController{EntryConf: entryConf}
 
 	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
-	nngsClient := gateway.NngsClient{}
+	nngsClient := c.NngsClient{}
 	nngsClient.Spawn(entryConf, nngsController)
 	fmt.Println("[情報] (^q^) おわり☆！")
 
