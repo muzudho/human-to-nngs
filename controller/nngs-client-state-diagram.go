@@ -37,6 +37,14 @@ func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode i
 		if dia.promptState == 6 {
 			// 得点計算
 			lib.scoring()
+
+			// 本来は 死に石 を選んだりするフェーズだが、
+			// コンピューター囲碁大会では 思考エンジンの自己申告だけ聞き取るので、
+			// このフェーズは飛ばします。
+			message := "done\nquit\n"
+			fmt.Printf("[情報] 得点計算は飛ばすぜ☆（＾～＾）対局も終了するぜ☆（＾～＾）[%s]\n", message)
+			oi.LongWrite(lib.writer, []byte(message))
+			// oi.LongWrite(lib.writer, []byte("\n"))
 		}
 		dia.promptState = 7
 	default:
