@@ -301,7 +301,7 @@ func (lib *libraryListener) parse() {
 
 								// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
 								// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-								lib.nngsListener.MyPhase()
+								print("****** I am thinking now   ******")
 
 								// @gtp.time_left('WHITE', @nngs.white_user[2])
 								// @gtp.time_left('BLACK', @nngs.black_user[2])
@@ -325,7 +325,7 @@ func (lib *libraryListener) parse() {
 
 								// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
 								// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-								lib.nngsListener.OpponentPhase()
+								print("****** wating for his move ******")
 
 								// lib.
 								//       mv = if move == 'Pass'

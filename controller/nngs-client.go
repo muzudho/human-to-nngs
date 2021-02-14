@@ -31,8 +31,6 @@ type libraryListener struct {
 	// NNGSクライアントの状態遷移図
 	nngsClientStateDiagram NngsClientStateDiagram
 
-	// NNGSの動作をリスニングします
-	nngsListener NngsListener
 	// １行で 1024 byte は飛んでこないことをサーバーと決めておけだぜ☆（＾～＾）
 	lineBuffer [1024]byte
 	index      uint
@@ -92,11 +90,10 @@ type libraryListener struct {
 }
 
 // Spawn - クライアント接続
-func (client NngsClient) Spawn(entryConf EntryConf, nngsListener NngsListener) error {
+func (client NngsClient) Spawn(entryConf EntryConf) error {
 	listener := libraryListener{
 		entryConf:              entryConf,
 		nngsClientStateDiagram: *new(NngsClientStateDiagram),
-		nngsListener:           nngsListener,
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
 		regexUseMatch:          *regexp.MustCompile("^Use <match"),
@@ -158,7 +155,7 @@ func (lib *libraryListener) read() {
 				lib.index = 0
 
 				if lib.newlineReadableState == 1 {
-					print("[状態切替(^q^)]")
+					print("[行単位入力へ切替(^q^)]")
 					lib.newlineReadableState = 2
 					break // for文を抜ける
 				}

@@ -40,14 +40,11 @@ func main() {
 	entryConf := ui.LoadEntryConf(*entryConfPath) // "./input/default.entryConf.toml"
 
 	// NNGSからのメッセージ受信に対応するプログラムを指定したろ☆（＾～＾）
-	var nngsController c.NngsListener = nil
 	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.Nngs.PlayerType)
-	// Human と決め打ち
-	nngsController = c.NngsHumanController{EntryConf: entryConf}
 
 	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
 	nngsClient := c.NngsClient{}
-	nngsClient.Spawn(entryConf, nngsController)
+	nngsClient.Spawn(entryConf)
 	fmt.Println("[情報] (^q^) おわり☆！")
 
 }
