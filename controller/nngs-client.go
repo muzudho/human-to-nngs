@@ -158,8 +158,9 @@ func (lib *libraryListener) read() {
 				lib.index = 0
 
 				if lib.newlineReadableState == 1 {
+					print("[状態切替(^q^)]")
 					lib.newlineReadableState = 2
-					// break // for文を抜ける
+					break // for文を抜ける
 				}
 			}
 		}
@@ -169,38 +170,38 @@ func (lib *libraryListener) read() {
 		}
 	}
 
-	/*
-		// 改行が送られてくるものと考えるぜ☆（＾～＾）
-		// これで、１行ずつ読み込めるな☆（＾～＾）
-		for {
-			n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+	//*
+	// 改行が送られてくるものと考えるぜ☆（＾～＾）
+	// これで、１行ずつ読み込めるな☆（＾～＾）
+	for {
+		n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
-			if nil != err {
-				return // 相手が切断したなどの理由でエラーになるので、終了します。
-			}
+		if nil != err {
+			return // 相手が切断したなどの理由でエラーになるので、終了します。
+		}
 
-			if n > 0 {
-				bytes := p[:n]
+		if n > 0 {
+			bytes := p[:n]
 
-				if bytes[0] == '\r' {
-					// Windows では、 \r\n と続いてくるものと想定します。
-					// Linux なら \r はこないものと想定します。
-					continue
+			if bytes[0] == '\r' {
+				// Windows では、 \r\n と続いてくるものと想定します。
+				// Linux なら \r はこないものと想定します。
+				continue
 
-				} else if bytes[0] == '\n' {
-					// `Login:` のように 改行が送られてこないケースはあるが、
-					// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
-					// 1行をパースします
-					lib.parse()
-					lib.index = 0
+			} else if bytes[0] == '\n' {
+				// `Login:` のように 改行が送られてこないケースはあるが、
+				// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
+				// 1行をパースします
+				lib.parse()
+				lib.index = 0
 
-				} else {
-					lib.lineBuffer[lib.index] = bytes[0]
-					lib.index++
-				}
+			} else {
+				lib.lineBuffer[lib.index] = bytes[0]
+				lib.index++
 			}
 		}
-		// */
+	}
+	// */
 }
 
 // 簡易表示モードに切り替えます。

@@ -58,9 +58,9 @@ func (lib *libraryListener) parse() {
 	line := string(lib.lineBuffer[:lib.index])
 
 	//*
-	//if lib.newlineReadableState == 2 {
-	print(fmt.Sprintf("受信[%s]\n", line))
-	//}
+	if lib.newlineReadableState == 2 {
+		print(fmt.Sprintf("受信[%s]\n", line))
+	}
 	// */
 
 	switch lib.state {
