@@ -29,7 +29,11 @@ EngineCommandOption = ''
 [MatchApplication]
 
 # 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。
-ApplyFromMe = false # true
+# true にしたなら、 OpponentName も設定してください
+ApplyFromMe = false
+
+# 自分の方から申し込むなら、対戦相手のアカウント名も指定してください。そうでないなら無視されます
+OpponentName = ''
 
 # 白番なら 'W', 黒番なら 'B'
 Phase = 'W'

@@ -27,7 +27,7 @@ type Nngs struct {
 // MatchApplication - [MatchApplication] 区画。
 type MatchApplication struct {
 	ApplyFromMe          bool
-	Opponent             string
+	OpponentName         string
 	Phase                string
 	BoardSize            int64
 	AvailableTimeMinutes int64
@@ -74,14 +74,14 @@ func (config EntryConf) EngineCommandOption() string {
 }
 
 // ApplyFromMe - 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。
-// true にしたなら、 Opponent も設定してください
+// true にしたなら、 OpponentName も設定してください
 func (config EntryConf) ApplyFromMe() bool {
 	return config.MatchApplication.ApplyFromMe
 }
 
-// Opponent - 自分の方から申し込むなら、対戦相手のアカウント名も指定してください。そうでないなら無視されます
-func (config EntryConf) Opponent() string {
-	return config.MatchApplication.Opponent
+// OpponentName - 自分の方から申し込むなら、対戦相手のアカウント名も指定してください。そうでないなら無視されます
+func (config EntryConf) OpponentName() string {
+	return config.MatchApplication.OpponentName
 }
 
 // Phase - 自分の色

@@ -120,7 +120,8 @@ func (lib *libraryListener) parse() {
 		if lib.entryConf.ApplyFromMe() {
 			// 対局を申し込みます。
 			_, configuredColorUpperCase := lib.entryConf.MyColor()
-			message := fmt.Sprintf("match %s %s %d %d %d\n", lib.entryConf.Opponent(), configuredColorUpperCase, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
+			opponentColorString := phase.FlipColorString(configuredColorUpperCase)
+			message := fmt.Sprintf("match %s %s %d %d %d\n", lib.entryConf.OpponentName(), opponentColorString, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
 			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 			oi.LongWrite(lib.writer, []byte(message))
 		}

@@ -12,3 +12,19 @@ const (
 	// White - 自分のパスワードを入力し、そしてプロンプトを待っています
 	White
 )
+
+// FlipColorString - 色を反転
+func FlipColorString(color string) string {
+	switch color {
+	case "B":
+		return "W"
+	case "W":
+		return "B"
+	case "b":
+		return "w"
+	case "w":
+		return "b"
+	default:
+		return color
+	}
+}
