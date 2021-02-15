@@ -109,54 +109,54 @@ func (client NngsClient) Spawn(entryConf EntryConf) error {
 }
 
 // CallTELNET - 決まった形のメソッド。
-func (lib nngsClientListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
+func (lis nngsClientListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
 	print("[情報] 受信開始☆")
 
-	lib.writer = w
-	lib.reader = r
+	lis.writer = w
+	lis.reader = r
 
-	go lib.read()
+	go lis.read()
 
 	// scanner - 標準入力を監視します。
 	scanner := bufio.NewScanner(os.Stdin)
 	// 無限ループ。 一行読み取ります。
 	for scanner.Scan() {
 		// 書き込みます。最後に改行を付けます。
-		oi.LongWrite(lib.writer, scanner.Bytes())
-		oi.LongWrite(lib.writer, []byte("\n"))
+		oi.LongWrite(lis.writer, scanner.Bytes())
+		oi.LongWrite(lis.writer, []byte("\n"))
 	}
 }
 
 // 送られてくるメッセージを待ち構えるループです。
-func (lib *nngsClientListener) read() {
+func (lis *nngsClientListener) read() {
 	var buffer [1]byte // これが満たされるまで待つ。1バイト。
 	p := buffer[:]
 
 	for {
-		n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+		n, err := lis.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
 		if n > 0 {
 			bytes := p[:n]
-			lib.lineBuffer[lib.index] = bytes[0]
-			lib.index++
+			lis.lineBuffer[lis.index] = bytes[0]
+			lis.index++
 
-			if lib.newlineReadableState < 2 {
+			if lis.newlineReadableState < 2 {
 				// [受信] 割り込みで 改行がない行も届くので、改行が届くまで待つという処理ができません。
 				print(string(bytes)) // 受け取るたびに１文字ずつ表示。
 			}
 
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
-			lib.parse()
+			lis.parse()
 
 			// `Login:` のように 改行が送られてこないケースはあるが、
 			// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
 			if bytes[0] == '\n' {
-				lib.index = 0
+				lis.index = 0
 
-				if lib.newlineReadableState == 1 {
+				if lis.newlineReadableState == 1 {
 					print("[行単位入力へ切替(^q^)]")
-					lib.newlineReadableState = 2
+					lis.newlineReadableState = 2
 					break // for文を抜ける
 				}
 			}
@@ -170,7 +170,7 @@ func (lib *nngsClientListener) read() {
 	// 改行が送られてくるものと考えるぜ☆（＾～＾）
 	// これで、１行ずつ読み込めるな☆（＾～＾）
 	for {
-		n, err := lib.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+		n, err := lis.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
 		if nil != err {
 			return // 相手が切断したなどの理由でエラーになるので、終了します。
@@ -188,12 +188,12 @@ func (lib *nngsClientListener) read() {
 				// `Login:` のように 改行が送られてこないケースはあるが、
 				// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
 				// 1行をパースします
-				lib.parse()
-				lib.index = 0
+				lis.parse()
+				lis.index = 0
 
 			} else {
-				lib.lineBuffer[lib.index] = bytes[0]
-				lib.index++
+				lis.lineBuffer[lis.index] = bytes[0]
+				lis.index++
 			}
 		}
 	}
@@ -205,12 +205,12 @@ func setClientMode(w telnet.Writer) {
 	oi.LongWrite(w, []byte("set client true\n"))
 }
 
-func (lib *nngsClientListener) matchStart() {
+func (lis *nngsClientListener) matchStart() {
 	print("[情報] 対局成立だぜ☆")
 }
-func (lib *nngsClientListener) matchEnd() {
+func (lis *nngsClientListener) matchEnd() {
 	print("[情報] 対局終了だぜ☆")
 }
-func (lib *nngsClientListener) scoring() {
+func (lis *nngsClientListener) scoring() {
 	print("[情報] 得点計算だぜ☆")
 }
