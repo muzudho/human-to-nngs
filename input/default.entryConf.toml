@@ -29,7 +29,7 @@ EngineCommandOption = ''
 [MatchApplication]
 
 # 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。
-Apply = false
+ApplyFromMe = false # true
 
 # 白番なら 'W', 黒番なら 'B'
 Phase = 'W'

@@ -167,7 +167,6 @@ func (lib *libraryListener) read() {
 		}
 	}
 
-	//*
 	// 改行が送られてくるものと考えるぜ☆（＾～＾）
 	// これで、１行ずつ読み込めるな☆（＾～＾）
 	for {
@@ -198,7 +197,6 @@ func (lib *libraryListener) read() {
 			}
 		}
 	}
-	// */
 }
 
 // 簡易表示モードに切り替えます。

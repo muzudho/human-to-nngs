@@ -117,7 +117,7 @@ func (lib *libraryListener) parse() {
 			lib.state = clistat.EnteredClientMode
 		}
 	case clistat.EnteredClientMode:
-		if lib.entryConf.Apply() {
+		if lib.entryConf.ApplyFromMe() {
 			// 対局を申し込みます。
 			_, configuredColorUpperCase := lib.entryConf.MyColor()
 			message := fmt.Sprintf("match %s %s %d %d %d\n", lib.entryConf.Opponent(), configuredColorUpperCase, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
@@ -174,8 +174,10 @@ func (lib *libraryListener) parse() {
 						opponentColorUppercase := strings.ToUpper(opponentColor)
 						switch opponentColor {
 						case "W":
+							fmt.Printf("[情報] lib.MyColorを黒に変更☆（＾～＾）\n")
 							lib.MyColor = phase.Black
 						case "B":
+							fmt.Printf("[情報] lib.MyColorを白に変更☆（＾～＾）\n")
 							lib.MyColor = phase.White
 						default:
 							panic(fmt.Sprintf("Unexpected opponentColor=%s.", opponentColor))
@@ -220,132 +222,128 @@ func (lib *libraryListener) parse() {
 			// A1 かもしれないし、 A12 かも知れず、いつコマンドが完了するか分からないので、２回以上実行されることはある。
 			case 15:
 				// print("15だぜ☆")
-				doing := true
+				//doing := true
 
 				// 対局中、ゲーム情報は 指し手の前に毎回流れてくるぜ☆（＾～＾）
 				// 自分が指すタイミングと、相手が指すタイミングのどちらでも流れてくるぜ☆（＾～＾）
 				// とりあえずゲーム情報を全部変数に入れとけばあとで使える☆（＾～＾）
-				if doing {
-					matches2 := lib.regexGame.FindSubmatch(promptStateBytes)
-					if 10 < len(matches2) {
-						// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
-						fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
+				//if doing {
+				matches2 := lib.regexGame.FindSubmatch(promptStateBytes)
+				if 10 < len(matches2) {
+					// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
+					fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
 
-						// ゲームID
-						// Original code: @gameid
-						gameID, err := strconv.ParseUint(string(matches2[1]), 10, 0)
-						if err != nil {
-							panic(err)
-						}
-						lib.GameID = uint(gameID)
-
-						// ゲームの型？
-						// Original code: @gametype
-						lib.GameType = string(matches2[2])
-
-						// 白手番の名前、フィールド２、残り時間（秒）、フィールド４
-						// Original code: @white_user = [$3, $4, $5, $6]
-						lib.GameWName = string(matches2[3])
-						lib.GameWField2 = string(matches2[4])
-
-						gameWAvailableSeconds, err := strconv.Atoi(string(matches2[5]))
-						if err != nil {
-							panic(err)
-						}
-						lib.GameWAvailableSeconds = gameWAvailableSeconds
-
-						lib.GameWField4 = string(matches2[6])
-
-						// 黒手番の名前、フィールド２、残り時間（秒）、フィールド４
-						// Original code: @black_user = [$7, $8, $9, $10]
-						lib.GameBName = string(matches2[7])
-						lib.GameBField2 = string(matches2[8])
-
-						gameBAvailableSeconds, err := strconv.Atoi(string(matches2[9]))
-						if err != nil {
-							panic(err)
-						}
-						lib.GameBAvailableSeconds = gameBAvailableSeconds
-
-						lib.GameBField4 = string(matches2[10])
-
-						doing = false
+					// ゲームID
+					// Original code: @gameid
+					gameID, err := strconv.ParseUint(string(matches2[1]), 10, 0)
+					if err != nil {
+						panic(err)
 					}
+					lib.GameID = uint(gameID)
+
+					// ゲームの型？
+					// Original code: @gametype
+					lib.GameType = string(matches2[2])
+
+					// 白手番の名前、フィールド２、残り時間（秒）、フィールド４
+					// Original code: @white_user = [$3, $4, $5, $6]
+					lib.GameWName = string(matches2[3])
+					lib.GameWField2 = string(matches2[4])
+
+					gameWAvailableSeconds, err := strconv.Atoi(string(matches2[5]))
+					if err != nil {
+						panic(err)
+					}
+					lib.GameWAvailableSeconds = gameWAvailableSeconds
+
+					lib.GameWField4 = string(matches2[6])
+
+					// 黒手番の名前、フィールド２、残り時間（秒）、フィールド４
+					// Original code: @black_user = [$7, $8, $9, $10]
+					lib.GameBName = string(matches2[7])
+					lib.GameBField2 = string(matches2[8])
+
+					gameBAvailableSeconds, err := strconv.Atoi(string(matches2[9]))
+					if err != nil {
+						panic(err)
+					}
+					lib.GameBAvailableSeconds = gameBAvailableSeconds
+
+					lib.GameBField4 = string(matches2[10])
+
+					//doing = false
 				}
+				//}
 
 				// 指し手はこっちだぜ☆（＾～＾）
-				if doing {
-					matches2 := lib.regexMove.FindSubmatch(promptStateBytes)
-					if 3 < len(matches2) {
-						// Original code: @lastmove = [$1, $2, $3]
-						fmt.Printf("[情報] 指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches2[1], matches2[2], matches2[3])
+				//if doing {
+				matches3 := lib.regexMove.FindSubmatch(promptStateBytes)
+				if 3 < len(matches3) {
+					// Original code: @lastmove = [$1, $2, $3]
+					fmt.Printf("[情報] 指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches3[1], matches3[2], matches3[3])
 
-						// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
-						switch string(matches2[2]) {
-						case "B":
-							lib.Phase = phase.White
-						case "W":
-							lib.Phase = phase.Black
-						default:
-							panic(fmt.Sprintf("Unexpected phase %s", string(matches2[2])))
-						}
+					// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
+					switch string(matches3[2]) {
+					case "B":
+						lib.Phase = phase.White
+					case "W":
+						lib.Phase = phase.Black
+					default:
+						panic(fmt.Sprintf("Unexpected phase %s", string(matches3[2])))
+					}
 
-						/*
-							fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
-							if lib.MyColor == lib.Phase {
-								// 自分の手番だぜ☆（＾～＾）！
-								lib.OpponentMove = string(matches2[3]) // 相手の指し手が付いてくるので記憶
-								fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
-								// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-								lib.state = clistat.BlockingMyTurn
+					fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
+					if lib.MyColor == lib.Phase {
+						// 自分の手番だぜ☆（＾～＾）！
+						lib.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
+						fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
+						// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
+						lib.state = clistat.BlockingMyTurn
 
-								// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
-								// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-								print("****** I am thinking now   ******")
+						// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
+						// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
+						print("****** I am thinking now   ******")
 
-								// @gtp.time_left('WHITE', @nngs.white_user[2])
-								// @gtp.time_left('BLACK', @nngs.black_user[2])
-								//    mv, c = @gtp.genmove
-								//    if mv.nil?
-								//      mv = 'PASS'
-								//    elsif mv == "resign"
+						// @gtp.time_left('WHITE', @nngs.white_user[2])
+						// @gtp.time_left('BLACK', @nngs.black_user[2])
+						//    mv, c = @gtp.genmove
+						//    if mv.nil?
+						//      mv = 'PASS'
+						//    elsif mv == "resign"
 
-								//    else
-								//      i, j = mv
-								//      mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
-								//      mv = "#{mv}#{j}"
-								//    end
-								//    @nngs.input mv
-							} else {
-								// 相手の手番だぜ☆（＾～＾）！
-								lib.MyMove = string(matches2[3]) // 自分の指し手が付いてくるので記憶
-								fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
-								// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-								lib.state = clistat.BlockingOpponentTurn
+						//    else
+						//      i, j = mv
+						//      mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
+						//      mv = "#{mv}#{j}"
+						//    end
+						//    @nngs.input mv
+					} else {
+						// 相手の手番だぜ☆（＾～＾）！
+						lib.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
+						fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
+						// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
+						lib.state = clistat.BlockingOpponentTurn
 
-								// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
-								// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-								print("****** wating for his move ******")
+						// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
+						// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
+						print("****** wating for his move ******")
 
-								// lib.
-								//       mv = if move == 'Pass'
-								//              nil
-								//            elsif move.downcase[/resign/] == "resign"
-								//              "resign"
-								//            else
-								//              i = move.upcase[0].ord - ?A.ord + 1
-								// 	         i = i - 1 if i > ?I.ord - ?A.ord
-								//              j = move[/[0-9]+/].to_i
-								//              [i, j]
-								//            end
-								// #      p [mv, @his_color]
-								//       @gtp.playmove([mv, @his_color])
-							}
-						*/
-
-						doing = false
+						// lib.
+						//       mv = if move == 'Pass'
+						//              nil
+						//            elsif move.downcase[/resign/] == "resign"
+						//              "resign"
+						//            else
+						//              i = move.upcase[0].ord - ?A.ord + 1
+						// 	         i = i - 1 if i > ?I.ord - ?A.ord
+						//              j = move[/[0-9]+/].to_i
+						//              [i, j]
+						//            end
+						// #      p [mv, @his_color]
+						//       @gtp.playmove([mv, @his_color])
 					}
 				}
+				//}
 			default:
 				// 想定外のコードが来ても無視しろだぜ☆（＾～＾）
 			}

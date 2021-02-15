@@ -33,9 +33,6 @@ func main() {
 	// チャッターの作成。 標準出力とロガーを一緒にしただけです。
 	u.G.Chat = *u.NewChatter(u.G.Log)
 
-	// 標準出力への表示と、ログへの書き込みを同時に行います。
-	// e.G.Chat.Trace("Author: %s\n", e.Author)
-
 	// fmt.Println("[情報] 設定ファイルを読み込んだろ☆（＾～＾）")
 	entryConf := ui.LoadEntryConf(*entryConfPath) // "./input/default.entryConf.toml"
 
@@ -46,5 +43,4 @@ func main() {
 	nngsClient := c.NngsClient{}
 	nngsClient.Spawn(entryConf)
 	fmt.Println("[情報] (^q^) おわり☆！")
-
 }
