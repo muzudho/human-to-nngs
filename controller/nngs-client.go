@@ -17,7 +17,7 @@ type NngsClient struct {
 }
 
 // `github.com/reiver/go-telnet` ライブラリーの動作をリスニングします
-type libraryListener struct {
+type nngsClientListener struct {
 	entryConf EntryConf
 
 	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
@@ -91,7 +91,7 @@ type libraryListener struct {
 
 // Spawn - クライアント接続
 func (client NngsClient) Spawn(entryConf EntryConf) error {
-	listener := libraryListener{
+	listener := nngsClientListener{
 		entryConf:              entryConf,
 		nngsClientStateDiagram: *new(NngsClientStateDiagram),
 		index:                  0,
@@ -109,7 +109,7 @@ func (client NngsClient) Spawn(entryConf EntryConf) error {
 }
 
 // CallTELNET - 決まった形のメソッド。
-func (lib libraryListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
+func (lib nngsClientListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
 	print("[情報] 受信開始☆")
 
@@ -129,7 +129,7 @@ func (lib libraryListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r tel
 }
 
 // 送られてくるメッセージを待ち構えるループです。
-func (lib *libraryListener) read() {
+func (lib *nngsClientListener) read() {
 	var buffer [1]byte // これが満たされるまで待つ。1バイト。
 	p := buffer[:]
 
@@ -205,12 +205,12 @@ func setClientMode(w telnet.Writer) {
 	oi.LongWrite(w, []byte("set client true\n"))
 }
 
-func (lib *libraryListener) matchStart() {
+func (lib *nngsClientListener) matchStart() {
 	print("[情報] 対局成立だぜ☆")
 }
-func (lib *libraryListener) matchEnd() {
+func (lib *nngsClientListener) matchEnd() {
 	print("[情報] 対局終了だぜ☆")
 }
-func (lib *libraryListener) scoring() {
+func (lib *nngsClientListener) scoring() {
 	print("[情報] 得点計算だぜ☆")
 }

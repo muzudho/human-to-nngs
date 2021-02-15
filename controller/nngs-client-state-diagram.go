@@ -16,7 +16,7 @@ type NngsClientStateDiagram struct {
 	promptState int
 }
 
-func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode int) {
+func (dia *NngsClientStateDiagram) promptDiagram(lib *nngsClientListener, subCode int) {
 	switch subCode {
 	// Info
 	case 5:
@@ -54,7 +54,7 @@ func (dia *NngsClientStateDiagram) promptDiagram(lib *libraryListener, subCode i
 	}
 }
 
-func (lib *libraryListener) parse() {
+func (lib *nngsClientListener) parse() {
 	// 現在読み取り中の文字なので、早とちりするかも知れないぜ☆（＾～＾）
 	line := string(lib.lineBuffer[:lib.index])
 
@@ -355,7 +355,7 @@ func (lib *libraryListener) parse() {
 	}
 }
 
-func (lib *libraryListener) turn() {
+func (lib *nngsClientListener) turn() {
 	fmt.Printf("[情報] ターン☆（＾～＾） MyColor=%s, CurrentPhase=%s\n", phase.ToString(lib.MyColor), phase.ToString(lib.CurrentPhase))
 	if lib.MyColor == lib.CurrentPhase {
 		// 自分の手番だぜ☆（＾～＾）！
@@ -366,9 +366,9 @@ func (lib *libraryListener) turn() {
 	}
 }
 
-func (lib *libraryListener) myTurn() {
+func (lib *nngsClientListener) myTurn() {
 	print("****** I am thinking now   ******")
 }
-func (lib *libraryListener) opponentTurn() {
+func (lib *nngsClientListener) opponentTurn() {
 	print("****** wating for his move ******")
 }
