@@ -81,6 +81,7 @@ func (lib *libraryListener) parse() {
 			oi.LongWrite(lib.writer, []byte(user))
 			oi.LongWrite(lib.writer, []byte("\n"))
 
+			fmt.Printf("[状態遷移] 名前入力へ変更☆（＾～＾）\n")
 			lib.state = clistat.EnteredMyName
 		}
 	// Original code: NngsClient.rb/NNGSClient/`def login`
@@ -93,6 +94,8 @@ func (lib *libraryListener) parse() {
 			oi.LongWrite(lib.writer, []byte(lib.entryConf.Nngs.Pass))
 			oi.LongWrite(lib.writer, []byte("\n"))
 			setClientMode(lib.writer)
+
+			fmt.Printf("[状態遷移] クライアントモードへ変更a☆（＾～＾）\n")
 			lib.state = clistat.EnteredClientMode
 
 		} else if line == "Password: " {
@@ -102,10 +105,14 @@ func (lib *libraryListener) parse() {
 			}
 			oi.LongWrite(lib.writer, []byte(lib.entryConf.Nngs.Pass))
 			oi.LongWrite(lib.writer, []byte("\n"))
+
+			fmt.Printf("[状態遷移] パスワード入力へ変更☆（＾～＾）\n")
 			lib.state = clistat.EnteredMyPasswordAndIAmWaitingToBePrompted
 
 		} else if line == "#> " {
 			setClientMode(lib.writer)
+
+			fmt.Printf("[状態遷移] クライアントモードへ変更b☆（＾～＾）\n")
 			lib.state = clistat.EnteredClientMode
 		}
 		// 入力した名前が被っていれば、ここで無限ループしてるかも☆（＾～＾）
@@ -114,6 +121,7 @@ func (lib *libraryListener) parse() {
 	case clistat.EnteredMyPasswordAndIAmWaitingToBePrompted:
 		if line == "#> " {
 			setClientMode(lib.writer)
+			fmt.Printf("[状態遷移] クライアントモードへ変更c☆（＾～＾）\n")
 			lib.state = clistat.EnteredClientMode
 		}
 	case clistat.EnteredClientMode:
@@ -129,6 +137,8 @@ func (lib *libraryListener) parse() {
 			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 			oi.LongWrite(lib.writer, []byte(message))
 		}
+
+		fmt.Printf("[状態遷移] 情報待ちへ変更☆（＾～＾）\n")
 		lib.state = clistat.WaitingInInfo
 
 	// '1 5' - Waiting
@@ -207,7 +217,7 @@ func (lib *libraryListener) parse() {
 					}
 				} else if lib.regexMatchAccepted.Match(promptStateBytes) {
 					// 黒の手番から始まるぜ☆（＾～＾）
-					lib.Phase = phase.Black
+					lib.CurrentPhase = phase.Black
 
 				} else if lib.regexDecline1.Match(promptStateBytes) {
 					print("[対局はキャンセルされたぜ☆]")
@@ -227,12 +237,10 @@ func (lib *libraryListener) parse() {
 			// A1 かもしれないし、 A12 かも知れず、いつコマンドが完了するか分からないので、２回以上実行されることはある。
 			case 15:
 				// print("15だぜ☆")
-				//doing := true
 
 				// 対局中、ゲーム情報は 指し手の前に毎回流れてくるぜ☆（＾～＾）
 				// 自分が指すタイミングと、相手が指すタイミングのどちらでも流れてくるぜ☆（＾～＾）
 				// とりあえずゲーム情報を全部変数に入れとけばあとで使える☆（＾～＾）
-				//if doing {
 				matches2 := lib.regexGame.FindSubmatch(promptStateBytes)
 				if 10 < len(matches2) {
 					// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
@@ -276,89 +284,79 @@ func (lib *libraryListener) parse() {
 
 					lib.GameBField4 = string(matches2[10])
 
-					//doing = false
-				}
-				//}
+				} else {
+					// 指し手はこっちだぜ☆（＾～＾）
+					matches3 := lib.regexMove.FindSubmatch(promptStateBytes)
+					if 3 < len(matches3) {
+						// Original code: @lastmove = [$1, $2, $3]
 
-				// 指し手はこっちだぜ☆（＾～＾）
-				//if doing {
-				matches3 := lib.regexMove.FindSubmatch(promptStateBytes)
-				if 3 < len(matches3) {
-					// Original code: @lastmove = [$1, $2, $3]
-					fmt.Printf("[情報] 指し手☆（＾～＾） code[%s], color[%s] move[%s]", matches3[1], matches3[2], matches3[3])
+						// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
+						lib.CurrentPhase = phase.ToNum(phase.FlipColorString(string(matches3[2])))
 
-					// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
-					switch string(matches3[2]) {
-					case "B":
-						lib.Phase = phase.White
-					case "W":
-						lib.Phase = phase.Black
-					default:
-						panic(fmt.Sprintf("Unexpected phase %s", string(matches3[2])))
-					}
+						fmt.Printf("[情報] 指し手☆（＾～＾） code=%s color=%s move=%s MyColor=%s, CurrentPhase=%s\n", matches3[1], matches3[2], matches3[3], phase.ToString(lib.MyColor), phase.ToString(lib.CurrentPhase))
+						if lib.MyColor == lib.CurrentPhase {
+							// 自分の手番だぜ☆（＾～＾）！
+							lib.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
+							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
-					fmt.Printf("[情報] 初回指し手 lib.MyColor=%d, lib.Phase=%d", lib.MyColor, lib.Phase)
-					if lib.MyColor == lib.Phase {
-						// 自分の手番だぜ☆（＾～＾）！
-						lib.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
-						fmt.Printf("[情報] 自分の手番で一旦ブロッキング☆（＾～＾）")
-						// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-						lib.state = clistat.BlockingMyTurn
+							fmt.Printf("[状態遷移] 申し込まれた方のブロッキング、へ変更☆（＾～＾）\n")
+							lib.state = clistat.BlockingReceiver
 
-						// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
-						// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-						print("****** I am thinking now   ******")
+							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
+							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
+							print("****** I am thinking now   ******")
 
-						// @gtp.time_left('WHITE', @nngs.white_user[2])
-						// @gtp.time_left('BLACK', @nngs.black_user[2])
-						//    mv, c = @gtp.genmove
-						//    if mv.nil?
-						//      mv = 'PASS'
-						//    elsif mv == "resign"
+							// @gtp.time_left('WHITE', @nngs.white_user[2])
+							// @gtp.time_left('BLACK', @nngs.black_user[2])
+							//    mv, c = @gtp.genmove
+							//    if mv.nil?
+							//      mv = 'PASS'
+							//    elsif mv == "resign"
 
-						//    else
-						//      i, j = mv
-						//      mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
-						//      mv = "#{mv}#{j}"
-						//    end
-						//    @nngs.input mv
-					} else {
-						// 相手の手番だぜ☆（＾～＾）！
-						lib.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
-						fmt.Printf("[情報] 相手の手番で一旦ブロッキング☆（＾～＾）")
-						// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
-						lib.state = clistat.BlockingOpponentTurn
+							//    else
+							//      i, j = mv
+							//      mv = '' << 'ABCDEFGHJKLMNOPQRST'[i-1]
+							//      mv = "#{mv}#{j}"
+							//    end
+							//    @nngs.input mv
+						} else {
+							// 相手の手番だぜ☆（＾～＾）！
+							lib.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
+							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
-						// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
-						// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-						print("****** wating for his move ******")
+							fmt.Printf("[状態遷移] 申し込んだ方でブロッキング、へ変更☆（＾～＾）\n")
+							lib.state = clistat.BlockingSender
 
-						// lib.
-						//       mv = if move == 'Pass'
-						//              nil
-						//            elsif move.downcase[/resign/] == "resign"
-						//              "resign"
-						//            else
-						//              i = move.upcase[0].ord - ?A.ord + 1
-						// 	         i = i - 1 if i > ?I.ord - ?A.ord
-						//              j = move[/[0-9]+/].to_i
-						//              [i, j]
-						//            end
-						// #      p [mv, @his_color]
-						//       @gtp.playmove([mv, @his_color])
+							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
+							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
+							print("****** wating for his move ******")
+
+							// lib.
+							//       mv = if move == 'Pass'
+							//              nil
+							//            elsif move.downcase[/resign/] == "resign"
+							//              "resign"
+							//            else
+							//              i = move.upcase[0].ord - ?A.ord + 1
+							// 	         i = i - 1 if i > ?I.ord - ?A.ord
+							//              j = move[/[0-9]+/].to_i
+							//              [i, j]
+							//            end
+							// #      p [mv, @his_color]
+							//       @gtp.playmove([mv, @his_color])
+						}
 					}
 				}
-				//}
 			default:
 				// 想定外のコードが来ても無視しろだぜ☆（＾～＾）
 			}
 		}
-	case clistat.BlockingMyTurn:
-		// 自分の手番で受信はブロック中です
-		fmt.Printf("[情報] 自分[%s]のターン☆（＾～＾）", phase.ToString(lib.MyColor))
-	case clistat.BlockingOpponentTurn:
+	case clistat.BlockingReceiver:
+		// 申し込まれた方はブロック中です
+		fmt.Printf("[情報] 申し込まれた方[%s]のブロッキング☆（＾～＾）", phase.ToString(lib.MyColor))
+	case clistat.BlockingSender:
 		// 相手の手番で受信はブロック中です。
-		fmt.Printf("[情報] 自分の相手[%s]のターン☆（＾～＾）", phase.FlipColorString(phase.ToString(lib.MyColor)))
+		fmt.Printf("[情報] 申し込んだ方[%s]のブロッキング☆（＾～＾）", phase.ToString(lib.MyColor))
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
 		panic(fmt.Sprintf("Unexpected state transition. state=%d", lib.state))

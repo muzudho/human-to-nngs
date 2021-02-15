@@ -15,8 +15,8 @@ const (
 	EnteredClientMode
 	// WaitingInInfo - 対局が申し込まれるのを '1 5 Waiting' (ロビー相当)で待ちます
 	WaitingInInfo
-	// BlockingMyTurn - 自分の手番で受信はブロック中です。
-	BlockingMyTurn
-	// BlockingOpponentTurn - 相手の手番で受信はブロック中です。
-	BlockingOpponentTurn
+	// BlockingReceiver - 申し込まれた方はブロック中です。
+	BlockingReceiver
+	// BlockingSender - 申し込んだ方はブロック中です。
+	BlockingSender
 )
