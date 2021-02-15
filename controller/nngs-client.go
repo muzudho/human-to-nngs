@@ -14,10 +14,6 @@ import (
 type NngsClient struct {
 }
 
-// `github.com/reiver/go-telnet` ライブラリーの動作をリスニングします
-type nngsClientListener struct {
-}
-
 // Spawn - クライアント接続
 func (client NngsClient) Spawn(entryConf EntryConf) error {
 	// NNGSクライアントの状態遷移図
@@ -42,7 +38,7 @@ func (client NngsClient) Spawn(entryConf EntryConf) error {
 func (dia NngsClientStateDiagram) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
 	print("[情報] 受信開始☆")
-	lis := nngsClientListener{}
+	lis := nngsClientStateDiagramListener{}
 
 	dia.writer = w
 	dia.reader = r
@@ -60,7 +56,7 @@ func (dia NngsClientStateDiagram) CallTELNET(ctx telnet.Context, w telnet.Writer
 }
 
 // 送られてくるメッセージを待ち構えるループです。
-func (dia *NngsClientStateDiagram) read(lis *nngsClientListener) {
+func (dia *NngsClientStateDiagram) read(lis *nngsClientStateDiagramListener) {
 	var buffer [1]byte // これが満たされるまで待つ。1バイト。
 	p := buffer[:]
 
@@ -134,14 +130,4 @@ func (dia *NngsClientStateDiagram) read(lis *nngsClientListener) {
 // Original code: NngsClient.rb/NNGSClient/`def login`
 func setClientMode(w telnet.Writer) {
 	oi.LongWrite(w, []byte("set client true\n"))
-}
-
-func (lis *nngsClientListener) matchStart() {
-	print("[情報] 対局成立だぜ☆")
-}
-func (lis *nngsClientListener) matchEnd() {
-	print("[情報] 対局終了だぜ☆")
-}
-func (lis *nngsClientListener) scoring() {
-	print("[情報] 得点計算だぜ☆")
 }
