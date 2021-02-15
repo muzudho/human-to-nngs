@@ -6,8 +6,6 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/muzudho/human-to-nngs/controller/clistat"
-	"github.com/muzudho/human-to-nngs/entities/phase"
 	"github.com/reiver/go-oi"
 	"github.com/reiver/go-telnet"
 )
@@ -18,82 +16,14 @@ type NngsClient struct {
 
 // `github.com/reiver/go-telnet` ライブラリーの動作をリスニングします
 type nngsClientListener struct {
-	entryConf EntryConf
-
-	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
-	newlineReadableState uint
-
-	// NNGSへ書込み
-	writer telnet.Writer
-	// NNGSへ読込み
-	reader telnet.Reader
-
-	// NNGSクライアントの状態遷移図
-	nngsClientStateDiagram NngsClientStateDiagram
-
-	// １行で 1024 byte は飛んでこないことをサーバーと決めておけだぜ☆（＾～＾）
-	lineBuffer [1024]byte
-	index      uint
-
-	// 状態遷移
-	state clistat.Clistat
-
-	// 正規表現
-	regexCommand           regexp.Regexp
-	regexUseMatch          regexp.Regexp
-	regexUseMatchToRespond regexp.Regexp
-	regexMatchAccepted     regexp.Regexp
-	regexDecline1          regexp.Regexp
-	regexDecline2          regexp.Regexp
-	regexOneSeven          regexp.Regexp
-	regexGame              regexp.Regexp
-
-	// Example: `15 Game 2 I: kifuwarabe (0 2289 -1) vs kifuwarabi (0 2298 -1)`.
-	regexMove          regexp.Regexp
-	regexAcceptCommand regexp.Regexp
-
-	// MyColor - 自分の手番の色
-	MyColor phase.Phase
-
-	// BoardSize - 何路盤。マッチを受け取ったときに確定
-	BoardSize uint
-	// CurrentPhase - これから指す方。局面の手番とは逆になる
-	CurrentPhase phase.Phase
-	// MyMove - 自分の指し手
-	MyMove string
-	// OpponentMove - 相手の指し手
-	OpponentMove string
-	// CommandOfMatchAccept - 申し込まれた対局を受け入れるコマンド。人間プレイヤーの入力補助用
-	CommandOfMatchAccept string
-	// CommandOfMatchDecline - 申し込まれた対局をお断りするコマンド。人間プレイヤーの入力補助用
-	CommandOfMatchDecline string
-	// GameID - 対局番号☆（＾～＾） 1 から始まる数☆（＾～＾）
-	GameID uint
-	// GameType - なんだか分からないが少なくとも "I" とか入ってるぜ☆（＾～＾）
-	GameType string
-	// GameWName - 白手番の対局者アカウント名
-	GameWName string
-	// GameWField2 - 白手番の２番目のフィールド（用途不明）
-	GameWField2 string
-	// GameWAvailableSeconds - 白手番の残り時間（秒）
-	GameWAvailableSeconds int
-	// GameWField4 - 白手番の４番目のフィールド（用途不明）
-	GameWField4 string
-	// GameBName - 黒手番の対局者アカウント名
-	GameBName string
-	// GameBField2 - 黒手番の２番目のフィールド（用途不明）
-	GameBField2 string
-	// GameBAvailableSeconds - 白手番の残り時間（秒）
-	GameBAvailableSeconds int
-	// GameBField4 - 黒手番の４番目のフィールド（用途不明）
-	GameBField4 string
 }
 
 // Spawn - クライアント接続
 func (client NngsClient) Spawn(entryConf EntryConf) error {
-	listener := nngsClientListener{
-		entryConf:              entryConf,
-		nngsClientStateDiagram: *new(NngsClientStateDiagram),
+	// NNGSクライアントの状態遷移図
+	nngsClientStateDiagram := NngsClientStateDiagram{
+		entryConf: entryConf,
+		// nngsClientStateDiagram: *new(NngsClientStateDiagram),
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
 		regexUseMatch:          *regexp.MustCompile("^Use <match"),
@@ -105,58 +35,59 @@ func (client NngsClient) Spawn(entryConf EntryConf) error {
 		regexGame:              *regexp.MustCompile("Game (\\d+) ([a-zA-Z]): (\\S+) \\((\\S+) (\\S+) (\\S+)\\) vs (\\S+) \\((\\S+) (\\S+) (\\S+)\\)"),
 		regexMove:              *regexp.MustCompile("\\s*(\\d+)\\(([BWbw])\\): ([A-Z]\\d+|Pass)"),
 		regexAcceptCommand:     *regexp.MustCompile("match \\S+ \\S+ (\\d+) ")}
-	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", entryConf.Nngs.Host, entryConf.Nngs.Port), listener)
+	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", entryConf.Nngs.Host, entryConf.Nngs.Port), nngsClientStateDiagram)
 }
 
 // CallTELNET - 決まった形のメソッド。
-func (lis nngsClientListener) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
+func (dia NngsClientStateDiagram) CallTELNET(ctx telnet.Context, w telnet.Writer, r telnet.Reader) {
 
 	print("[情報] 受信開始☆")
+	lis := nngsClientListener{}
 
-	lis.writer = w
-	lis.reader = r
+	dia.writer = w
+	dia.reader = r
 
-	go lis.read()
+	go dia.read(&lis)
 
 	// scanner - 標準入力を監視します。
 	scanner := bufio.NewScanner(os.Stdin)
 	// 無限ループ。 一行読み取ります。
 	for scanner.Scan() {
 		// 書き込みます。最後に改行を付けます。
-		oi.LongWrite(lis.writer, scanner.Bytes())
-		oi.LongWrite(lis.writer, []byte("\n"))
+		oi.LongWrite(dia.writer, scanner.Bytes())
+		oi.LongWrite(dia.writer, []byte("\n"))
 	}
 }
 
 // 送られてくるメッセージを待ち構えるループです。
-func (lis *nngsClientListener) read() {
+func (dia *NngsClientStateDiagram) read(lis *nngsClientListener) {
 	var buffer [1]byte // これが満たされるまで待つ。1バイト。
 	p := buffer[:]
 
 	for {
-		n, err := lis.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+		n, err := dia.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
 		if n > 0 {
 			bytes := p[:n]
-			lis.lineBuffer[lis.index] = bytes[0]
-			lis.index++
+			dia.lineBuffer[dia.index] = bytes[0]
+			dia.index++
 
-			if lis.newlineReadableState < 2 {
+			if dia.newlineReadableState < 2 {
 				// [受信] 割り込みで 改行がない行も届くので、改行が届くまで待つという処理ができません。
 				print(string(bytes)) // 受け取るたびに１文字ずつ表示。
 			}
 
 			// 改行を受け取る前にパースしてしまおう☆（＾～＾）早とちりするかも知れないけど☆（＾～＾）
-			lis.parse()
+			dia.parse(lis)
 
 			// `Login:` のように 改行が送られてこないケースはあるが、
 			// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
 			if bytes[0] == '\n' {
-				lis.index = 0
+				dia.index = 0
 
-				if lis.newlineReadableState == 1 {
+				if dia.newlineReadableState == 1 {
 					print("[行単位入力へ切替(^q^)]")
-					lis.newlineReadableState = 2
+					dia.newlineReadableState = 2
 					break // for文を抜ける
 				}
 			}
@@ -170,7 +101,7 @@ func (lis *nngsClientListener) read() {
 	// 改行が送られてくるものと考えるぜ☆（＾～＾）
 	// これで、１行ずつ読み込めるな☆（＾～＾）
 	for {
-		n, err := lis.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
+		n, err := dia.reader.Read(p) // 送られてくる文字がなければ、ここでブロックされます。
 
 		if nil != err {
 			return // 相手が切断したなどの理由でエラーになるので、終了します。
@@ -188,12 +119,12 @@ func (lis *nngsClientListener) read() {
 				// `Login:` のように 改行が送られてこないケースはあるが、
 				// 対局が始まってしまえば、改行は送られてくると考えろだぜ☆（＾～＾）
 				// 1行をパースします
-				lis.parse()
-				lis.index = 0
+				dia.parse(lis)
+				dia.index = 0
 
 			} else {
-				lis.lineBuffer[lis.index] = bytes[0]
-				lis.index++
+				dia.lineBuffer[dia.index] = bytes[0]
+				dia.index++
 			}
 		}
 	}

@@ -2,18 +2,87 @@ package controller
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/muzudho/human-to-nngs/controller/clistat"
 	"github.com/muzudho/human-to-nngs/entities/phase"
 	"github.com/reiver/go-oi"
+	"github.com/reiver/go-telnet"
 )
 
 // NngsClientStateDiagram - NNGSクライアントの状態遷移図
 type NngsClientStateDiagram struct {
 	// 状態遷移の中の小さな区画
 	promptState int
+
+	entryConf EntryConf
+
+	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
+	newlineReadableState uint
+
+	// NNGSへ書込み
+	writer telnet.Writer
+	// NNGSへ読込み
+	reader telnet.Reader
+
+	// １行で 1024 byte は飛んでこないことをサーバーと決めておけだぜ☆（＾～＾）
+	lineBuffer [1024]byte
+	index      uint
+
+	// 状態遷移
+	state clistat.Clistat
+
+	// 正規表現
+	regexCommand           regexp.Regexp
+	regexUseMatch          regexp.Regexp
+	regexUseMatchToRespond regexp.Regexp
+	regexMatchAccepted     regexp.Regexp
+	regexDecline1          regexp.Regexp
+	regexDecline2          regexp.Regexp
+	regexOneSeven          regexp.Regexp
+	regexGame              regexp.Regexp
+
+	// Example: `15 Game 2 I: kifuwarabe (0 2289 -1) vs kifuwarabi (0 2298 -1)`.
+	regexMove          regexp.Regexp
+	regexAcceptCommand regexp.Regexp
+
+	// MyColor - 自分の手番の色
+	MyColor phase.Phase
+
+	// BoardSize - 何路盤。マッチを受け取ったときに確定
+	BoardSize uint
+	// CurrentPhase - これから指す方。局面の手番とは逆になる
+	CurrentPhase phase.Phase
+	// MyMove - 自分の指し手
+	MyMove string
+	// OpponentMove - 相手の指し手
+	OpponentMove string
+	// CommandOfMatchAccept - 申し込まれた対局を受け入れるコマンド。人間プレイヤーの入力補助用
+	CommandOfMatchAccept string
+	// CommandOfMatchDecline - 申し込まれた対局をお断りするコマンド。人間プレイヤーの入力補助用
+	CommandOfMatchDecline string
+	// GameID - 対局番号☆（＾～＾） 1 から始まる数☆（＾～＾）
+	GameID uint
+	// GameType - なんだか分からないが少なくとも "I" とか入ってるぜ☆（＾～＾）
+	GameType string
+	// GameWName - 白手番の対局者アカウント名
+	GameWName string
+	// GameWField2 - 白手番の２番目のフィールド（用途不明）
+	GameWField2 string
+	// GameWAvailableSeconds - 白手番の残り時間（秒）
+	GameWAvailableSeconds int
+	// GameWField4 - 白手番の４番目のフィールド（用途不明）
+	GameWField4 string
+	// GameBName - 黒手番の対局者アカウント名
+	GameBName string
+	// GameBField2 - 黒手番の２番目のフィールド（用途不明）
+	GameBField2 string
+	// GameBAvailableSeconds - 白手番の残り時間（秒）
+	GameBAvailableSeconds int
+	// GameBField4 - 黒手番の４番目のフィールド（用途不明）
+	GameBField4 string
 }
 
 func (dia *NngsClientStateDiagram) promptDiagram(lis *nngsClientListener, subCode int) {
@@ -22,7 +91,7 @@ func (dia *NngsClientStateDiagram) promptDiagram(lis *nngsClientListener, subCod
 	case 5:
 		if dia.promptState == 0 {
 			// このフラグを立てるのは初回だけ。
-			lis.newlineReadableState = 1
+			dia.newlineReadableState = 1
 		}
 
 		if dia.promptState == 7 {
@@ -33,7 +102,7 @@ func (dia *NngsClientStateDiagram) promptDiagram(lis *nngsClientListener, subCod
 	case 6:
 		if dia.promptState == 5 {
 			lis.matchStart() // 対局成立
-			lis.turn()
+			dia.turn(lis)
 		}
 		dia.promptState = 6
 	// Scoring
@@ -46,7 +115,7 @@ func (dia *NngsClientStateDiagram) promptDiagram(lis *nngsClientListener, subCod
 			// このフェーズは飛ばします。
 			message := "done\nquit\n"
 			fmt.Printf("[情報] 得点計算は飛ばすぜ☆（＾～＾）対局も終了するぜ☆（＾～＾）[%s]\n", message)
-			oi.LongWrite(lis.writer, []byte(message))
+			oi.LongWrite(dia.writer, []byte(message))
 		}
 		dia.promptState = 7
 	default:
@@ -54,17 +123,15 @@ func (dia *NngsClientStateDiagram) promptDiagram(lis *nngsClientListener, subCod
 	}
 }
 
-func (lis *nngsClientListener) parse() {
+func (dia *NngsClientStateDiagram) parse(lis *nngsClientListener) {
 	// 現在読み取り中の文字なので、早とちりするかも知れないぜ☆（＾～＾）
-	line := string(lis.lineBuffer[:lis.index])
+	line := string(dia.lineBuffer[:dia.index])
 
-	//*
-	if lis.newlineReadableState == 2 {
+	if dia.newlineReadableState == 2 {
 		print(fmt.Sprintf("受信[%s]\n", line))
 	}
-	// */
 
-	switch lis.state {
+	switch dia.state {
 	case clistat.None:
 		// Original code: NngsClient.rb/NNGSClient/`def login`
 		// Waitfor "Login: ".
@@ -72,79 +139,79 @@ func (lis *nngsClientListener) parse() {
 			// あなたの名前を入力してください。
 
 			// 設定ファイルから自動で入力するぜ☆（＾ｑ＾）
-			user := lis.entryConf.User()
+			user := dia.entryConf.User()
 
 			// 自動入力のときは、設定ミスなら強制終了しないと無限ループしてしまうぜ☆（＾～＾）
 			if user == "" {
 				panic("Need name (User)")
 			}
 
-			oi.LongWrite(lis.writer, []byte(user))
-			oi.LongWrite(lis.writer, []byte("\n"))
+			oi.LongWrite(dia.writer, []byte(user))
+			oi.LongWrite(dia.writer, []byte("\n"))
 
 			fmt.Printf("[状態遷移] 名前入力へ変更☆（＾～＾）\n")
-			lis.state = clistat.EnteredMyName
+			dia.state = clistat.EnteredMyName
 		}
 	// Original code: NngsClient.rb/NNGSClient/`def login`
 	case clistat.EnteredMyName:
 		if line == "1 1" {
 			// パスワードを入れろだぜ☆（＾～＾）
-			if lis.entryConf.Pass() == "" {
+			if dia.entryConf.Pass() == "" {
 				panic("Need password")
 			}
-			oi.LongWrite(lis.writer, []byte(lis.entryConf.Nngs.Pass))
-			oi.LongWrite(lis.writer, []byte("\n"))
-			setClientMode(lis.writer)
+			oi.LongWrite(dia.writer, []byte(dia.entryConf.Nngs.Pass))
+			oi.LongWrite(dia.writer, []byte("\n"))
+			setClientMode(dia.writer)
 
 			fmt.Printf("[状態遷移] クライアントモードへ変更a☆（＾～＾）\n")
-			lis.state = clistat.EnteredClientMode
+			dia.state = clistat.EnteredClientMode
 
 		} else if line == "Password: " {
 			// パスワードを入れろだぜ☆（＾～＾）
-			if lis.entryConf.Pass() == "" {
+			if dia.entryConf.Pass() == "" {
 				panic("Need password")
 			}
-			oi.LongWrite(lis.writer, []byte(lis.entryConf.Nngs.Pass))
-			oi.LongWrite(lis.writer, []byte("\n"))
+			oi.LongWrite(dia.writer, []byte(dia.entryConf.Nngs.Pass))
+			oi.LongWrite(dia.writer, []byte("\n"))
 
 			fmt.Printf("[状態遷移] パスワード入力へ変更☆（＾～＾）\n")
-			lis.state = clistat.EnteredMyPasswordAndIAmWaitingToBePrompted
+			dia.state = clistat.EnteredMyPasswordAndIAmWaitingToBePrompted
 
 		} else if line == "#> " {
-			setClientMode(lis.writer)
+			setClientMode(dia.writer)
 
 			fmt.Printf("[状態遷移] クライアントモードへ変更b☆（＾～＾）\n")
-			lis.state = clistat.EnteredClientMode
+			dia.state = clistat.EnteredClientMode
 		}
 		// 入力した名前が被っていれば、ここで無限ループしてるかも☆（＾～＾）
 
 	// Original code: NngsClient.rb/NNGSClient/`def login`
 	case clistat.EnteredMyPasswordAndIAmWaitingToBePrompted:
 		if line == "#> " {
-			setClientMode(lis.writer)
+			setClientMode(dia.writer)
 			fmt.Printf("[状態遷移] クライアントモードへ変更c☆（＾～＾）\n")
-			lis.state = clistat.EnteredClientMode
+			dia.state = clistat.EnteredClientMode
 		}
 	case clistat.EnteredClientMode:
-		if lis.entryConf.ApplyFromMe() {
+		if dia.entryConf.ApplyFromMe() {
 			// 対局を申し込みます。
-			_, configuredColorUpperCase := lis.entryConf.MyColor()
+			_, configuredColorUpperCase := dia.entryConf.MyColor()
 
 			fmt.Printf("[情報] lis.MyColorを%sに変更☆（＾～＾）\n", configuredColorUpperCase)
-			lis.MyColor = phase.ToNum(configuredColorUpperCase)
+			dia.MyColor = phase.ToNum(configuredColorUpperCase)
 
-			message := fmt.Sprintf("match %s %s %d %d %d\n", lis.entryConf.OpponentName(), configuredColorUpperCase, lis.entryConf.BoardSize(), lis.entryConf.AvailableTimeMinutes(), lis.entryConf.CanadianTiming())
+			message := fmt.Sprintf("match %s %s %d %d %d\n", dia.entryConf.OpponentName(), configuredColorUpperCase, dia.entryConf.BoardSize(), dia.entryConf.AvailableTimeMinutes(), dia.entryConf.CanadianTiming())
 			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
-			oi.LongWrite(lis.writer, []byte(message))
+			oi.LongWrite(dia.writer, []byte(message))
 		}
 
 		fmt.Printf("[状態遷移] 情報待ちへ変更☆（＾～＾）\n")
-		lis.state = clistat.WaitingInInfo
+		dia.state = clistat.WaitingInInfo
 
 	// '1 5' - Waiting
 	case clistat.WaitingInInfo:
 		// Example: 1 5
-		matches := lis.regexCommand.FindSubmatch(lis.lineBuffer[:lis.index])
+		matches := dia.regexCommand.FindSubmatch(dia.lineBuffer[:dia.index])
 
 		//fmt.Printf("[情報] m[%s]", matches)
 		if 2 < len(matches) {
@@ -162,23 +229,23 @@ func (lis *nngsClientListener) parse() {
 				promptState := string(promptStateBytes)
 				promptStateNum, err := strconv.Atoi(promptState)
 				if err == nil {
-					lis.nngsClientStateDiagram.promptDiagram(lis, promptStateNum)
+					dia.promptDiagram(lis, promptStateNum)
 				}
 			// Info
 			case 9:
-				if lis.regexUseMatch.Match(promptStateBytes) {
-					matches2 := lis.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
+				if dia.regexUseMatch.Match(promptStateBytes) {
+					matches2 := dia.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
 						fmt.Printf("[情報] 対局を申し込まれたぜ☆（＾～＾）[%s] accept[%s],decline[%s]\n", string(promptStateBytes), matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
-						lis.CommandOfMatchAccept = string(matches2[1])
+						dia.CommandOfMatchAccept = string(matches2[1])
 						// Example: `decline kifuwarabi`
-						lis.CommandOfMatchDecline = string(matches2[2])
+						dia.CommandOfMatchDecline = string(matches2[2])
 
 						// acceptコマンドを半角空白でスプリットした３番目が、申し込んできた方の手番
-						matchAcceptTokens := strings.Split(lis.CommandOfMatchAccept, " ")
+						matchAcceptTokens := strings.Split(dia.CommandOfMatchAccept, " ")
 						if len(matchAcceptTokens) < 6 {
 							panic(fmt.Sprintf("Error matchAcceptTokens=[%s].", matchAcceptTokens))
 						}
@@ -187,39 +254,39 @@ func (lis *nngsClientListener) parse() {
 						myColorString := matchAcceptTokens[2]
 						myColorUppercase := strings.ToUpper(myColorString)
 						fmt.Printf("[情報] lis.MyColorを[%s]に変更☆（＾～＾）\n", myColorString)
-						lis.MyColor = phase.ToNum(myColorString)
+						dia.MyColor = phase.ToNum(myColorString)
 
 						boardSize, err := strconv.ParseUint(matchAcceptTokens[3], 10, 0)
 						if err != nil {
 							panic(err)
 						}
-						lis.BoardSize = uint(boardSize)
-						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", lis.BoardSize)
+						dia.BoardSize = uint(boardSize)
+						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", dia.BoardSize)
 
-						configuredColor, _ := lis.entryConf.MyColor()
+						configuredColor, _ := dia.entryConf.MyColor()
 
-						if lis.MyColor != configuredColor {
-							panic(fmt.Sprintf("Unexpected phase. lis.MyColor=%d configuredColor=%d.", lis.MyColor, configuredColor))
+						if dia.MyColor != configuredColor {
+							panic(fmt.Sprintf("Unexpected phase. MyColor=%d configuredColor=%d.", dia.MyColor, configuredColor))
 						}
 
 						// cmd_match
-						message := fmt.Sprintf("match %s %s %d %d %d\n", opponentPlayerName, myColorUppercase, lis.entryConf.BoardSize(), lis.entryConf.AvailableTimeMinutes(), lis.entryConf.CanadianTiming())
+						message := fmt.Sprintf("match %s %s %d %d %d\n", opponentPlayerName, myColorUppercase, dia.entryConf.BoardSize(), dia.entryConf.AvailableTimeMinutes(), dia.entryConf.CanadianTiming())
 						fmt.Printf("[情報] 対局を申し込むぜ☆（＾～＾）[%s]\n", message)
-						oi.LongWrite(lis.writer, []byte(message))
+						oi.LongWrite(dia.writer, []byte(message))
 					}
-				} else if lis.regexMatchAccepted.Match(promptStateBytes) {
+				} else if dia.regexMatchAccepted.Match(promptStateBytes) {
 					// 黒の手番から始まるぜ☆（＾～＾）
-					lis.CurrentPhase = phase.Black
+					dia.CurrentPhase = phase.Black
 
-				} else if lis.regexDecline1.Match(promptStateBytes) {
+				} else if dia.regexDecline1.Match(promptStateBytes) {
 					print("[対局はキャンセルされたぜ☆]")
 					// self.match_cancel
-				} else if lis.regexDecline2.Match(promptStateBytes) {
+				} else if dia.regexDecline2.Match(promptStateBytes) {
 					print("[対局はキャンセルされたぜ☆]")
 					// self.match_cancel
-				} else if lis.regexOneSeven.Match(promptStateBytes) {
+				} else if dia.regexOneSeven.Match(promptStateBytes) {
 					print("[サブ遷移へ☆]")
-					lis.nngsClientStateDiagram.promptDiagram(lis, 7)
+					dia.promptDiagram(lis, 7)
 				} else {
 					// "9 1 5" とか来るが、無視しろだぜ☆（＾～＾）
 				}
@@ -233,7 +300,7 @@ func (lis *nngsClientListener) parse() {
 				// 対局中、ゲーム情報は 指し手の前に毎回流れてくるぜ☆（＾～＾）
 				// 自分が指すタイミングと、相手が指すタイミングのどちらでも流れてくるぜ☆（＾～＾）
 				// とりあえずゲーム情報を全部変数に入れとけばあとで使える☆（＾～＾）
-				matches2 := lis.regexGame.FindSubmatch(promptStateBytes)
+				matches2 := dia.regexGame.FindSubmatch(promptStateBytes)
 				if 10 < len(matches2) {
 					// 白 VS 黒 の順序固定なのか☆（＾～＾）？ それともマッチを申し込んだ方 VS 申し込まれた方 なのか☆（＾～＾）？
 					fmt.Printf("[情報] 対局現在情報☆（＾～＾） gameid[%s], gametype[%s] white_user[%s][%s][%s][%s] black_user[%s][%s][%s][%s]", matches2[1], matches2[2], matches2[3], matches2[4], matches2[5], matches2[6], matches2[7], matches2[8], matches2[9], matches2[10])
@@ -244,51 +311,51 @@ func (lis *nngsClientListener) parse() {
 					if err != nil {
 						panic(err)
 					}
-					lis.GameID = uint(gameID)
+					dia.GameID = uint(gameID)
 
 					// ゲームの型？
 					// Original code: @gametype
-					lis.GameType = string(matches2[2])
+					dia.GameType = string(matches2[2])
 
 					// 白手番の名前、フィールド２、残り時間（秒）、フィールド４
 					// Original code: @white_user = [$3, $4, $5, $6]
-					lis.GameWName = string(matches2[3])
-					lis.GameWField2 = string(matches2[4])
+					dia.GameWName = string(matches2[3])
+					dia.GameWField2 = string(matches2[4])
 
 					gameWAvailableSeconds, err := strconv.Atoi(string(matches2[5]))
 					if err != nil {
 						panic(err)
 					}
-					lis.GameWAvailableSeconds = gameWAvailableSeconds
+					dia.GameWAvailableSeconds = gameWAvailableSeconds
 
-					lis.GameWField4 = string(matches2[6])
+					dia.GameWField4 = string(matches2[6])
 
 					// 黒手番の名前、フィールド２、残り時間（秒）、フィールド４
 					// Original code: @black_user = [$7, $8, $9, $10]
-					lis.GameBName = string(matches2[7])
-					lis.GameBField2 = string(matches2[8])
+					dia.GameBName = string(matches2[7])
+					dia.GameBField2 = string(matches2[8])
 
 					gameBAvailableSeconds, err := strconv.Atoi(string(matches2[9]))
 					if err != nil {
 						panic(err)
 					}
-					lis.GameBAvailableSeconds = gameBAvailableSeconds
+					dia.GameBAvailableSeconds = gameBAvailableSeconds
 
-					lis.GameBField4 = string(matches2[10])
+					dia.GameBField4 = string(matches2[10])
 
 				} else {
 					// 指し手はこっちだぜ☆（＾～＾）
-					matches3 := lis.regexMove.FindSubmatch(promptStateBytes)
+					matches3 := dia.regexMove.FindSubmatch(promptStateBytes)
 					if 3 < len(matches3) {
 						// Original code: @lastmove = [$1, $2, $3]
 
 						// 相手の指し手を受信したのだから、手番はその逆だぜ☆（＾～＾）
-						lis.CurrentPhase = phase.ToNum(phase.FlipColorString(string(matches3[2])))
+						dia.CurrentPhase = phase.ToNum(phase.FlipColorString(string(matches3[2])))
 
-						fmt.Printf("[情報] 指し手☆（＾～＾） code=%s color=%s move=%s MyColor=%s, CurrentPhase=%s\n", matches3[1], matches3[2], matches3[3], phase.ToString(lis.MyColor), phase.ToString(lis.CurrentPhase))
-						if lis.MyColor == lis.CurrentPhase {
+						fmt.Printf("[情報] 指し手☆（＾～＾） code=%s color=%s move=%s MyColor=%s, CurrentPhase=%s\n", matches3[1], matches3[2], matches3[3], phase.ToString(dia.MyColor), phase.ToString(dia.CurrentPhase))
+						if dia.MyColor == dia.CurrentPhase {
 							// 自分の手番だぜ☆（＾～＾）！
-							lis.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
+							dia.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
 							// fmt.Printf("[状態遷移] 申し込まれた方のブロッキング、へ変更☆（＾～＾）\n")
@@ -296,7 +363,7 @@ func (lis *nngsClientListener) parse() {
 
 							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-							lis.myTurn()
+							dia.myTurn(lis)
 
 							// @gtp.time_left('WHITE', @nngs.white_user[2])
 							// @gtp.time_left('BLACK', @nngs.black_user[2])
@@ -313,7 +380,7 @@ func (lis *nngsClientListener) parse() {
 							//    @nngs.input mv
 						} else {
 							// 相手の手番だぜ☆（＾～＾）！
-							lis.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
+							dia.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
 							// fmt.Printf("[状態遷移] 申し込んだ方でブロッキング、へ変更☆（＾～＾）\n")
@@ -321,7 +388,7 @@ func (lis *nngsClientListener) parse() {
 
 							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-							lis.opponentTurn()
+							dia.opponentTurn(lis)
 
 							// lis.
 							//       mv = if move == 'Pass'
@@ -345,30 +412,30 @@ func (lis *nngsClientListener) parse() {
 		}
 	case clistat.BlockingReceiver:
 		// 申し込まれた方はブロック中です
-		fmt.Printf("[情報] 申し込まれた方[%s]のブロッキング☆（＾～＾）", phase.ToString(lis.MyColor))
+		fmt.Printf("[情報] 申し込まれた方[%s]のブロッキング☆（＾～＾）", phase.ToString(dia.MyColor))
 	case clistat.BlockingSender:
 		// 相手の手番で受信はブロック中です。
-		fmt.Printf("[情報] 申し込んだ方[%s]のブロッキング☆（＾～＾）", phase.ToString(lis.MyColor))
+		fmt.Printf("[情報] 申し込んだ方[%s]のブロッキング☆（＾～＾）", phase.ToString(dia.MyColor))
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
-		panic(fmt.Sprintf("Unexpected state transition. state=%d", lis.state))
+		panic(fmt.Sprintf("Unexpected state transition. state=%d", dia.state))
 	}
 }
 
-func (lis *nngsClientListener) turn() {
-	fmt.Printf("[情報] ターン☆（＾～＾） MyColor=%s, CurrentPhase=%s\n", phase.ToString(lis.MyColor), phase.ToString(lis.CurrentPhase))
-	if lis.MyColor == lis.CurrentPhase {
+func (dia *NngsClientStateDiagram) turn(lis *nngsClientListener) {
+	fmt.Printf("[情報] ターン☆（＾～＾） MyColor=%s, CurrentPhase=%s\n", phase.ToString(dia.MyColor), phase.ToString(dia.CurrentPhase))
+	if dia.MyColor == dia.CurrentPhase {
 		// 自分の手番だぜ☆（＾～＾）！
-		lis.myTurn()
+		dia.myTurn(lis)
 	} else {
 		// 相手の手番だぜ☆（＾～＾）！
-		lis.opponentTurn()
+		dia.opponentTurn(lis)
 	}
 }
 
-func (lis *nngsClientListener) myTurn() {
+func (dia *NngsClientStateDiagram) myTurn(lis *nngsClientListener) {
 	print("****** I am thinking now   ******")
 }
-func (lis *nngsClientListener) opponentTurn() {
+func (dia *NngsClientStateDiagram) opponentTurn(lis *nngsClientListener) {
 	print("****** wating for his move ******")
 }
