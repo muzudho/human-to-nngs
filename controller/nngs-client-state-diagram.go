@@ -299,8 +299,8 @@ func (lib *libraryListener) parse() {
 							lib.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
-							fmt.Printf("[状態遷移] 申し込まれた方のブロッキング、へ変更☆（＾～＾）\n")
-							lib.state = clistat.BlockingReceiver
+							// fmt.Printf("[状態遷移] 申し込まれた方のブロッキング、へ変更☆（＾～＾）\n")
+							// lib.state = clistat.BlockingReceiver
 
 							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
@@ -324,8 +324,8 @@ func (lib *libraryListener) parse() {
 							lib.MyMove = string(matches3[3]) // 自分の指し手が付いてくるので記憶
 							// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 
-							fmt.Printf("[状態遷移] 申し込んだ方でブロッキング、へ変更☆（＾～＾）\n")
-							lib.state = clistat.BlockingSender
+							// fmt.Printf("[状態遷移] 申し込んだ方でブロッキング、へ変更☆（＾～＾）\n")
+							// lib.state = clistat.BlockingSender
 
 							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
