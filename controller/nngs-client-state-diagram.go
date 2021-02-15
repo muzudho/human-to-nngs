@@ -120,6 +120,10 @@ func (lib *libraryListener) parse() {
 		if lib.entryConf.ApplyFromMe() {
 			// 対局を申し込みます。
 			_, configuredColorUpperCase := lib.entryConf.MyColor()
+
+			fmt.Printf("[情報] lib.MyColorを%sに変更☆（＾～＾）\n", configuredColorUpperCase)
+			lib.MyColor = phase.ToNum(configuredColorUpperCase)
+
 			opponentColorString := phase.FlipColorString(configuredColorUpperCase)
 			message := fmt.Sprintf("match %s %s %d %d %d\n", lib.entryConf.OpponentName(), opponentColorString, lib.entryConf.BoardSize(), lib.entryConf.AvailableTimeMinutes(), lib.entryConf.CanadianTiming())
 			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
@@ -156,7 +160,7 @@ func (lib *libraryListener) parse() {
 					matches2 := lib.regexUseMatchToRespond.FindSubmatch(promptStateBytes)
 					if 2 < len(matches2) {
 						// 対局を申し込まれた方だけ、ここを通るぜ☆（＾～＾）
-						fmt.Printf("[情報] 対局が付いたぜ☆（＾～＾）[%s] accept[%s],decline[%s]\n", string(promptStateBytes), matches2[1], matches2[2])
+						fmt.Printf("[情報] 対局を申し込まれたぜ☆（＾～＾）[%s] accept[%s],decline[%s]\n", string(promptStateBytes), matches2[1], matches2[2])
 
 						// Example: `match kifuwarabi W 19 40 0`
 						lib.CommandOfMatchAccept = string(matches2[1])
@@ -297,7 +301,7 @@ func (lib *libraryListener) parse() {
 					if lib.MyColor == lib.Phase {
 						// 自分の手番だぜ☆（＾～＾）！
 						lib.OpponentMove = string(matches3[3]) // 相手の指し手が付いてくるので記憶
-						fmt.Printf("[情報] ここを通ってるのを見たことはないが、自分の手番で一旦ブロッキング☆（＾～＾）")
+						fmt.Printf("[情報] 自分の手番で一旦ブロッキング☆（＾～＾）")
 						// 初回だけここを通るが、以後、ここには戻ってこないぜ☆（＾～＾）
 						lib.state = clistat.BlockingMyTurn
 
@@ -351,10 +355,10 @@ func (lib *libraryListener) parse() {
 		}
 	case clistat.BlockingMyTurn:
 		// 自分の手番で受信はブロック中です
-		// fmt.Printf("[情報] 自分[%d]のターン☆（＾～＾）", lib.MyColor)
+		fmt.Printf("[情報] 自分[%s]のターン☆（＾～＾）", phase.ToString(lib.MyColor))
 	case clistat.BlockingOpponentTurn:
 		// 相手の手番で受信はブロック中です。
-		// fmt.Printf("[情報] 自分[%d]の相手のターン☆（＾～＾）", lib.MyColor)
+		fmt.Printf("[情報] 自分の相手[%s]のターン☆（＾～＾）", phase.FlipColorString(phase.ToString(lib.MyColor)))
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
 		panic(fmt.Sprintf("Unexpected state transition. state=%d", lib.state))
