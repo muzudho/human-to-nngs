@@ -10,12 +10,8 @@ import (
 	"github.com/reiver/go-telnet"
 )
 
-// NngsClient - クライアント
-type NngsClient struct {
-}
-
 // Spawn - クライアント接続
-func (client NngsClient) Spawn(entryConf EntryConf) error {
+func Spawn(entryConf EntryConf) error {
 	// NNGSクライアントの状態遷移図
 	nngsClientStateDiagram := NngsClientStateDiagram{
 		entryConf: entryConf,

@@ -40,7 +40,6 @@ func main() {
 	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.Nngs.PlayerType)
 
 	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
-	nngsClient := c.NngsClient{}
-	nngsClient.Spawn(entryConf)
+	c.Spawn(entryConf)
 	fmt.Println("[情報] (^q^) おわり☆！")
 }
