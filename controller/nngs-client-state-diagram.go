@@ -363,7 +363,6 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 							// Original code: nngsCUI.rb/announce class/update/`when 'my_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'my_turn'`.
-							dia.myTurn(lis)
 
 							// @gtp.time_left('WHITE', @nngs.white_user[2])
 							// @gtp.time_left('BLACK', @nngs.black_user[2])
@@ -388,7 +387,6 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 							// Original code: nngsCUI.rb/annouce class/update/`when 'his_turn'`.
 							// Original code: nngsCUI.rb/engine  class/update/`when 'his_turn'`.
-							dia.opponentTurn(lis)
 
 							// lis.
 							//       mv = if move == 'Pass'
@@ -404,6 +402,8 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 							// #      p [mv, @his_color]
 							//       @gtp.playmove([mv, @his_color])
 						}
+
+						dia.turn(lis)
 					}
 				}
 			default:
@@ -426,16 +426,9 @@ func (dia *NngsClientStateDiagram) turn(lis *nngsClientStateDiagramListener) {
 	fmt.Printf("[情報] ターン☆（＾～＾） MyColor=%s, CurrentPhase=%s\n", phase.ToString(dia.MyColor), phase.ToString(dia.CurrentPhase))
 	if dia.MyColor == dia.CurrentPhase {
 		// 自分の手番だぜ☆（＾～＾）！
-		dia.myTurn(lis)
+		lis.myTurn(dia)
 	} else {
 		// 相手の手番だぜ☆（＾～＾）！
-		dia.opponentTurn(lis)
+		lis.opponentTurn(dia)
 	}
-}
-
-func (dia *NngsClientStateDiagram) myTurn(lis *nngsClientStateDiagramListener) {
-	print("****** I am thinking now   ******")
-}
-func (dia *NngsClientStateDiagram) opponentTurn(lis *nngsClientStateDiagramListener) {
-	print("****** wating for his move ******")
 }
