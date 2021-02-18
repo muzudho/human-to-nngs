@@ -26,7 +26,9 @@ type User struct {
 	// * `Human` - 人間プレイヤーが接続する
 	// * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
 	InterfaceType string
-	// User name
+	// Name - 対局者名（アカウント名）
+	// Only A-Z a-z 0-9
+	// Names may be at most 10 characters long
 	Name                string
 	Pass                string
 	EngineCommand       string
