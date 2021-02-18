@@ -37,7 +37,7 @@ func main() {
 	entryConf := ui.LoadEntryConf(*entryConfPath) // "./input/default.entryConf.toml"
 
 	// NNGSからのメッセージ受信に対応するプログラムを指定したろ☆（＾～＾）
-	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.Nngs.PlayerType)
+	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.User.InterfaceType)
 
 	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
 	c.Spawn(entryConf)

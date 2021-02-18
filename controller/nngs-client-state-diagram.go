@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/muzudho/human-to-nngs/controller/clistat"
+	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/muzudho/human-to-nngs/entities/phase"
 	"github.com/reiver/go-oi"
 	"github.com/reiver/go-telnet"
@@ -17,7 +18,7 @@ type NngsClientStateDiagram struct {
 	// 状態遷移の中の小さな区画
 	promptState int
 
-	entryConf EntryConf
+	entryConf e.EntryConf
 
 	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
 	newlineReadableState uint
@@ -139,7 +140,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 			// あなたの名前を入力してください。
 
 			// 設定ファイルから自動で入力するぜ☆（＾ｑ＾）
-			user := dia.entryConf.User()
+			user := dia.entryConf.UserName()
 
 			// 自動入力のときは、設定ミスなら強制終了しないと無限ループしてしまうぜ☆（＾～＾）
 			if user == "" {
@@ -159,7 +160,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 			if dia.entryConf.Pass() == "" {
 				panic("Need password")
 			}
-			oi.LongWrite(dia.writer, []byte(dia.entryConf.Nngs.Pass))
+			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
 			setClientMode(dia.writer)
 
@@ -171,7 +172,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 			if dia.entryConf.Pass() == "" {
 				panic("Need password")
 			}
-			oi.LongWrite(dia.writer, []byte(dia.entryConf.Nngs.Pass))
+			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
 
 			fmt.Printf("[状態遷移] パスワード入力へ変更☆（＾～＾）\n")

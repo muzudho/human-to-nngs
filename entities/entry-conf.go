@@ -1,4 +1,4 @@
-package controller
+package entities
 
 import (
 	"fmt"
@@ -9,16 +9,25 @@ import (
 
 // EntryConf - 参加設定。
 type EntryConf struct {
-	Nngs             Nngs
+	Server           Server
+	User             User
 	MatchApplication MatchApplication
 }
 
-// Nngs - [Nngs] 区画。
-type Nngs struct {
-	PlayerType          string
-	Host                string
-	Port                int64 // Tomlのライブラリーが精度を細かく指定できないので int64 型で。
-	User                string
+// Server - [Server] 区画。
+type Server struct {
+	Host string
+	Port int64 // Tomlのライブラリーが精度を細かく指定できないので int64 型で。
+}
+
+// User - [User] 区画。
+type User struct {
+	// InterfaceType - プレイヤーの種類
+	// * `Human` - 人間プレイヤーが接続する
+	// * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
+	InterfaceType string
+	// User name
+	Name                string
 	Pass                string
 	EngineCommand       string
 	EngineCommandOption string
@@ -34,43 +43,43 @@ type MatchApplication struct {
 	CanadianTiming       int64
 }
 
-// PlayerType - プレイヤーの種類
+// InterfaceType - プレイヤーの種類
 // * `Human` - 人間プレイヤーが接続する
 // * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
-func (config EntryConf) PlayerType() string {
-	return config.Nngs.PlayerType
+func (config EntryConf) InterfaceType() string {
+	return config.User.InterfaceType
 }
 
 // Host - 接続先ホスト名
 func (config EntryConf) Host() string {
-	return config.Nngs.Host
+	return config.Server.Host
 }
 
 // Port - 接続先ホストのポート番号
 func (config EntryConf) Port() uint {
-	return uint(config.Nngs.Port)
+	return uint(config.Server.Port)
 }
 
-// User - 対局者名（アカウント名）
+// UserName - 対局者名（アカウント名）
 // Only A-Z a-z 0-9
 // Names may be at most 10 characters long
-func (config EntryConf) User() string {
-	return config.Nngs.User
+func (config EntryConf) UserName() string {
+	return config.User.Name
 }
 
 // Pass - 何路盤
 func (config EntryConf) Pass() string {
-	return config.Nngs.Pass
+	return config.User.Pass
 }
 
 // EngineCommand - 思考エンジンを起動するコマンドの実行ファイル名の部分（OSにより書き方が異なるかも）
 func (config EntryConf) EngineCommand() string {
-	return config.Nngs.EngineCommand
+	return config.User.EngineCommand
 }
 
 // EngineCommandOption - 思考エンジンを起動するコマンドの半角スペース区切りの引数（OSにより書き方が異なるかも）
 func (config EntryConf) EngineCommandOption() string {
-	return config.Nngs.EngineCommandOption
+	return config.User.EngineCommandOption
 }
 
 // ApplyFromMe - 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。

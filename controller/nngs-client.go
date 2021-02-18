@@ -6,12 +6,13 @@ import (
 	"os"
 	"regexp"
 
+	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/reiver/go-oi"
 	"github.com/reiver/go-telnet"
 )
 
 // Spawn - クライアント接続
-func Spawn(entryConf EntryConf) error {
+func Spawn(entryConf e.EntryConf) error {
 	// NNGSクライアントの状態遷移図
 	nngsClientStateDiagram := NngsClientStateDiagram{
 		entryConf: entryConf,
@@ -27,7 +28,7 @@ func Spawn(entryConf EntryConf) error {
 		regexGame:              *regexp.MustCompile("Game (\\d+) ([a-zA-Z]): (\\S+) \\((\\S+) (\\S+) (\\S+)\\) vs (\\S+) \\((\\S+) (\\S+) (\\S+)\\)"),
 		regexMove:              *regexp.MustCompile("\\s*(\\d+)\\(([BWbw])\\): ([A-Z]\\d+|Pass)"),
 		regexAcceptCommand:     *regexp.MustCompile("match \\S+ \\S+ (\\d+) ")}
-	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", entryConf.Nngs.Host, entryConf.Nngs.Port), nngsClientStateDiagram)
+	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", entryConf.Server.Host, entryConf.Server.Port), nngsClientStateDiagram)
 }
 
 // CallTELNET - 決まった形のメソッド。
