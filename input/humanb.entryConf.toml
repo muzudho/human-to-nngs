@@ -1,10 +1,6 @@
 # 黒プレイヤー（人間）を想定
 
-[Nngs]
-
-# * `Human` - 人間プレイヤーが接続する
-# * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
-PlayerType = 'Human'
+[Server]
 
 Host = 'localhost'
 
@@ -12,10 +8,17 @@ Host = 'localhost'
 # (^q^) 数値型のデータをクォーテーションで囲むとエラーもなく読取失敗するから注意☆
 Port = 9696
 
+# ユーザー設定
+[User]
+
+# * `Human` - 人間プレイヤーが接続する
+# * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
+InterfaceType = 'Human'
+
 # 対局者名（アカウント名）
 # Only A-Z a-z 0-9
 # Names may be at most 10 characters long
-User = 'playerb'
+Name = 'playerb'
 
 # パスワード（任意）
 Pass = ''
