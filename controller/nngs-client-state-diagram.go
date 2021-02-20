@@ -9,6 +9,7 @@ import (
 	"github.com/muzudho/human-to-nngs/controller/clistat"
 	e "github.com/muzudho/human-to-nngs/entities"
 	"github.com/muzudho/human-to-nngs/entities/phase"
+	u "github.com/muzudho/human-to-nngs/usecases"
 	"github.com/reiver/go-oi"
 	"github.com/reiver/go-telnet"
 )
@@ -144,7 +145,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 			// 自動入力のときは、設定ミスなら強制終了しないと無限ループしてしまうぜ☆（＾～＾）
 			if user == "" {
-				panic("Need name (User)")
+				panic(u.G.Log.Fatal("Need name (User)"))
 			}
 
 			oi.LongWrite(dia.writer, []byte(user))
@@ -158,7 +159,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 		if line == "1 1" {
 			// パスワードを入れろだぜ☆（＾～＾）
 			if dia.entryConf.Pass() == "" {
-				panic("Need password")
+				panic(u.G.Log.Fatal("Need password"))
 			}
 			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
@@ -170,7 +171,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 		} else if line == "Password: " {
 			// パスワードを入れろだぜ☆（＾～＾）
 			if dia.entryConf.Pass() == "" {
-				panic("Need password")
+				panic(u.G.Log.Fatal("Need password"))
 			}
 			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
@@ -222,7 +223,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 			code, err := strconv.Atoi(commandCode)
 			if err != nil {
-				panic(err) // 想定外の遷移だぜ☆（＾～＾）！
+				panic(u.G.Log.Fatal(err.Error())) // 想定外の遷移だぜ☆（＾～＾）！
 			}
 			switch code {
 			// Prompt
@@ -248,7 +249,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 						// acceptコマンドを半角空白でスプリットした３番目が、申し込んできた方の手番
 						matchAcceptTokens := strings.Split(dia.CommandOfMatchAccept, " ")
 						if len(matchAcceptTokens) < 6 {
-							panic(fmt.Sprintf("Error matchAcceptTokens=[%s].", matchAcceptTokens))
+							panic(u.G.Log.Fatal("Error matchAcceptTokens=[%s].", matchAcceptTokens))
 						}
 
 						opponentPlayerName := matchAcceptTokens[1]
@@ -259,7 +260,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 						boardSize, err := strconv.ParseUint(matchAcceptTokens[3], 10, 0)
 						if err != nil {
-							panic(err)
+							panic(u.G.Log.Fatal(err.Error()))
 						}
 						dia.BoardSize = uint(boardSize)
 						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", dia.BoardSize)
@@ -267,7 +268,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 						configuredColor, _ := dia.entryConf.MyColor()
 
 						if dia.MyColor != configuredColor {
-							panic(fmt.Sprintf("Unexpected phase. MyColor=%d configuredColor=%d.", dia.MyColor, configuredColor))
+							panic(u.G.Log.Fatal("Unexpected phase. MyColor=%d configuredColor=%d.", dia.MyColor, configuredColor))
 						}
 
 						// cmd_match
@@ -310,7 +311,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 					// Original code: @gameid
 					gameID, err := strconv.ParseUint(string(matches2[1]), 10, 0)
 					if err != nil {
-						panic(err)
+						panic(u.G.Log.Fatal(err.Error()))
 					}
 					dia.GameID = uint(gameID)
 
@@ -325,7 +326,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 					gameWAvailableSeconds, err := strconv.Atoi(string(matches2[5]))
 					if err != nil {
-						panic(err)
+						panic(u.G.Log.Fatal(err.Error()))
 					}
 					dia.GameWAvailableSeconds = gameWAvailableSeconds
 
@@ -338,7 +339,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 					gameBAvailableSeconds, err := strconv.Atoi(string(matches2[9]))
 					if err != nil {
-						panic(err)
+						panic(u.G.Log.Fatal(err.Error()))
 					}
 					dia.GameBAvailableSeconds = gameBAvailableSeconds
 
@@ -419,7 +420,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 		fmt.Printf("[情報] 申し込んだ方[%s]のブロッキング☆（＾～＾）", phase.ToString(dia.MyColor))
 	default:
 		// 想定外の遷移だぜ☆（＾～＾）！
-		panic(fmt.Sprintf("Unexpected state transition. state=%d", dia.state))
+		panic(u.G.Log.Fatal("Unexpected state transition. state=%d", dia.state))
 	}
 }
 

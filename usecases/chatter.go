@@ -54,9 +54,11 @@ func (chatter Chatter) Error(text string, args ...interface{}) {
 }
 
 // Fatal - 強制終了したことを伝えます。
-func (chatter Chatter) Fatal(text string, args ...interface{}) {
-	fmt.Printf(text, args...)           // 標準出力
-	chatter.logger.Fatal(text, args...) // ログ
+func (chatter Chatter) Fatal(text string, args ...interface{}) string {
+	message := fmt.Sprintf(text, args...)
+	fmt.Printf(message)           // 標準出力
+	chatter.logger.Fatal(message) // ログ
+	return message
 }
 
 // Print - 必ず出力します。

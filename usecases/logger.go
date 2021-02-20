@@ -94,8 +94,10 @@ func (logger Logger) Error(text string, args ...interface{}) {
 }
 
 // Fatal - ログファイルに書き込みます。
-func (logger Logger) Fatal(text string, args ...interface{}) {
-	write(logger.fatalPath, text, args...)
+func (logger Logger) Fatal(text string, args ...interface{}) string {
+	message := fmt.Sprintf(text, args...)
+	write(logger.fatalPath, message)
+	return message
 }
 
 // Print - ログファイルに書き込みます。 Chatter から呼び出してください。
