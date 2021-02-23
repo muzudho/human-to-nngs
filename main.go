@@ -11,10 +11,10 @@ import (
 
 func main() {
 	// コマンドライン引数
-	entryConfPath := flag.String("entry", "./input/default.entryConf.toml", "*.entryConf.toml file path.")
+	connectorConfPath := flag.String("connector", "./input/connector.conf.toml", "connector.conf.toml file path.")
 	flag.Parse()
 	fmt.Printf("[情報] flag.Args()=%s\n", flag.Args())
-	fmt.Printf("[情報] entryConfPath=%s\n", *entryConfPath)
+	fmt.Printf("[情報] connectorConfPath=%s\n", *connectorConfPath)
 
 	// グローバル変数の作成
 	u.G = *new(u.GlobalVariables)
@@ -34,12 +34,12 @@ func main() {
 	u.G.Chat = *u.NewChatter(u.G.Log)
 
 	// fmt.Println("[情報] 設定ファイルを読み込んだろ☆（＾～＾）")
-	entryConf := ui.LoadEntryConf(*entryConfPath) // "./input/default.entryConf.toml"
+	connectorConf := ui.LoadConnectorConf(*connectorConfPath) // "./input/connector.conf.toml"
 
 	// NNGSからのメッセージ受信に対応するプログラムを指定したろ☆（＾～＾）
-	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", entryConf.User.InterfaceType)
+	fmt.Printf("[情報] (^q^) プレイヤーのタイプ☆ [%s]", connectorConf.User.InterfaceType)
 
 	fmt.Println("[情報] (^q^) 何か文字を打てだぜ☆ 終わりたかったら [Ctrl]+[C]☆")
-	c.Spawn(entryConf)
+	c.Spawn(connectorConf)
 	fmt.Println("[情報] (^q^) おわり☆！")
 }

@@ -12,10 +12,10 @@ import (
 )
 
 // Spawn - クライアント接続
-func Spawn(entryConf e.EntryConf) error {
+func Spawn(connectorConf e.ConnectorConf) error {
 	// NNGSクライアントの状態遷移図
 	nngsClientStateDiagram := NngsClientStateDiagram{
-		entryConf: entryConf,
+		connectorConf: connectorConf,
 		// nngsClientStateDiagram: *new(NngsClientStateDiagram),
 		index:                  0,
 		regexCommand:           *regexp.MustCompile("^(\\d+) (.*)"),
@@ -28,7 +28,7 @@ func Spawn(entryConf e.EntryConf) error {
 		regexGame:              *regexp.MustCompile("Game (\\d+) ([a-zA-Z]): (\\S+) \\((\\S+) (\\S+) (\\S+)\\) vs (\\S+) \\((\\S+) (\\S+) (\\S+)\\)"),
 		regexMove:              *regexp.MustCompile("\\s*(\\d+)\\(([BWbw])\\): ([A-Z]\\d+|Pass)"),
 		regexAcceptCommand:     *regexp.MustCompile("match \\S+ \\S+ (\\d+) ")}
-	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", entryConf.Server.Host, entryConf.Server.Port), nngsClientStateDiagram)
+	return telnet.DialToAndCall(fmt.Sprintf("%s:%d", connectorConf.Server.Host, connectorConf.Server.Port), nngsClientStateDiagram)
 }
 
 // CallTELNET - 決まった形のメソッド。

@@ -7,8 +7,8 @@ import (
 	"github.com/muzudho/human-to-nngs/entities/phase"
 )
 
-// EntryConf - 参加設定。
-type EntryConf struct {
+// ConnectorConf - 参加設定。
+type ConnectorConf struct {
 	Server           Server
 	User             User
 	MatchApplication MatchApplication
@@ -48,60 +48,60 @@ type MatchApplication struct {
 // InterfaceType - プレイヤーの種類
 // * `Human` - 人間プレイヤーが接続する
 // * `GTP` - GTP(碁テキスト プロトコル)を用いる思考エンジンが接続する
-func (config EntryConf) InterfaceType() string {
+func (config ConnectorConf) InterfaceType() string {
 	return config.User.InterfaceType
 }
 
 // Host - 接続先ホスト名
-func (config EntryConf) Host() string {
+func (config ConnectorConf) Host() string {
 	return config.Server.Host
 }
 
 // Port - 接続先ホストのポート番号
-func (config EntryConf) Port() uint {
+func (config ConnectorConf) Port() uint {
 	return uint(config.Server.Port)
 }
 
 // UserName - 対局者名（アカウント名）
 // Only A-Z a-z 0-9
 // Names may be at most 10 characters long
-func (config EntryConf) UserName() string {
+func (config ConnectorConf) UserName() string {
 	return config.User.Name
 }
 
 // Pass - 何路盤
-func (config EntryConf) Pass() string {
+func (config ConnectorConf) Pass() string {
 	return config.User.Pass
 }
 
 // EngineCommand - 思考エンジンを起動するコマンドの実行ファイル名の部分（OSにより書き方が異なるかも）
-func (config EntryConf) EngineCommand() string {
+func (config ConnectorConf) EngineCommand() string {
 	return config.User.EngineCommand
 }
 
 // EngineCommandOption - 思考エンジンを起動するコマンドの半角スペース区切りの引数（OSにより書き方が異なるかも）
-func (config EntryConf) EngineCommandOption() string {
+func (config ConnectorConf) EngineCommandOption() string {
 	return config.User.EngineCommandOption
 }
 
 // ApplyFromMe - 自分の方から申し込むなら true, 申し込みを受けるのを待つ方なら false。
 // true にしたなら、 OpponentName も設定してください
-func (config EntryConf) ApplyFromMe() bool {
+func (config ConnectorConf) ApplyFromMe() bool {
 	return config.MatchApplication.ApplyFromMe
 }
 
 // OpponentName - 自分の方から申し込むなら、対戦相手のアカウント名も指定してください。そうでないなら無視されます
-func (config EntryConf) OpponentName() string {
+func (config ConnectorConf) OpponentName() string {
 	return config.MatchApplication.OpponentName
 }
 
 // Phase - 自分の色
-func (config EntryConf) Phase() string {
+func (config ConnectorConf) Phase() string {
 	return config.MatchApplication.Phase
 }
 
 // MyColor - 自分の石の色
-func (config EntryConf) MyColor() (phase.Phase, string) {
+func (config ConnectorConf) MyColor() (phase.Phase, string) {
 	configuredColorUpperCase := strings.ToUpper(config.MatchApplication.Phase)
 	myPhase := phase.PhaseNone
 	switch configuredColorUpperCase {
@@ -117,16 +117,16 @@ func (config EntryConf) MyColor() (phase.Phase, string) {
 }
 
 // BoardSize - 何路盤
-func (config EntryConf) BoardSize() uint {
+func (config ConnectorConf) BoardSize() uint {
 	return uint(config.MatchApplication.BoardSize)
 }
 
 // AvailableTimeMinutes - 持ち時間（分）
-func (config EntryConf) AvailableTimeMinutes() uint {
+func (config ConnectorConf) AvailableTimeMinutes() uint {
 	return uint(config.MatchApplication.AvailableTimeMinutes)
 }
 
 // CanadianTiming - カナダ式秒読み。25手を何分以内に打てばよいか
-func (config EntryConf) CanadianTiming() uint {
+func (config ConnectorConf) CanadianTiming() uint {
 	return uint(config.MatchApplication.CanadianTiming)
 }

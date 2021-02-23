@@ -11,8 +11,8 @@ import (
 
 // e "github.com/muzudho/kifuwarabe-uec12/entities"
 
-// LoadEntryConf - Toml形式の参加設定ファイルを読み込みます。
-func LoadEntryConf(path string) e.EntryConf {
+// LoadConnectorConf - Toml形式の参加設定ファイルを読み込みます。
+func LoadConnectorConf(path string) e.ConnectorConf {
 
 	// ファイル読込
 	fileData, err := ioutil.ReadFile(path)
@@ -25,7 +25,7 @@ func LoadEntryConf(path string) e.EntryConf {
 
 	// Toml解析
 	binary := []byte(string(fileData))
-	config := e.EntryConf{}
+	config := e.ConnectorConf{}
 	toml.Unmarshal(binary, &config)
 
 	debugPrintConfig(config)
@@ -55,7 +55,7 @@ func debugPrintToml(fileData []byte) {
 	fmt.Printf("[情報] MatchApplication.CanadianTiming=%d\n", tomlTree.Get("MatchApplication.CanadianTiming").(int64))
 }
 
-func debugPrintConfig(config e.EntryConf) {
+func debugPrintConfig(config e.ConnectorConf) {
 	fmt.Println("[情報] Memory:")
 	fmt.Printf("[情報] Server.Host=%s\n", config.Server.Host)
 	fmt.Printf("[情報] Server.Port=%d\n", config.Server.Port)

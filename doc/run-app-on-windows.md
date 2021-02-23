@@ -7,5 +7,5 @@
 human-to-nngs
 
 # 黒番の例
-human-to-nngs --entry input/humanb.entryConf.toml
+human-to-nngs --connector input/humanb-connector.conf.toml
 ```

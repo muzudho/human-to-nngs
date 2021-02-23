@@ -6,6 +6,6 @@ import (
 
 // NngsHumanController - NNGS からの受信メッセージをさばきます。
 type NngsHumanController struct {
-	// EntryConf - 参加設定
-	EntryConf e.EntryConf
+	// ConnectorConf - 参加設定
+	ConnectorConf e.ConnectorConf
 }

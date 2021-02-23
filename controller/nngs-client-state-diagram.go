@@ -19,7 +19,7 @@ type NngsClientStateDiagram struct {
 	// 状態遷移の中の小さな区画
 	promptState int
 
-	entryConf e.EntryConf
+	connectorConf e.ConnectorConf
 
 	// 末尾に改行が付いていると想定していいフェーズ。逆に、そうでない例は `Login:` とか
 	newlineReadableState uint
@@ -141,7 +141,7 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 			// あなたの名前を入力してください。
 
 			// 設定ファイルから自動で入力するぜ☆（＾ｑ＾）
-			user := dia.entryConf.UserName()
+			user := dia.connectorConf.UserName()
 
 			// 自動入力のときは、設定ミスなら強制終了しないと無限ループしてしまうぜ☆（＾～＾）
 			if user == "" {
@@ -158,10 +158,10 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 	case clistat.EnteredMyName:
 		if line == "1 1" {
 			// パスワードを入れろだぜ☆（＾～＾）
-			if dia.entryConf.Pass() == "" {
+			if dia.connectorConf.Pass() == "" {
 				panic(u.G.Log.Fatal("Need password"))
 			}
-			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
+			oi.LongWrite(dia.writer, []byte(dia.connectorConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
 			setClientMode(dia.writer)
 
@@ -170,10 +170,10 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 
 		} else if line == "Password: " {
 			// パスワードを入れろだぜ☆（＾～＾）
-			if dia.entryConf.Pass() == "" {
+			if dia.connectorConf.Pass() == "" {
 				panic(u.G.Log.Fatal("Need password"))
 			}
-			oi.LongWrite(dia.writer, []byte(dia.entryConf.User.Pass))
+			oi.LongWrite(dia.writer, []byte(dia.connectorConf.User.Pass))
 			oi.LongWrite(dia.writer, []byte("\n"))
 
 			fmt.Printf("[状態遷移] パスワード入力へ変更☆（＾～＾）\n")
@@ -195,14 +195,14 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 			dia.state = clistat.EnteredClientMode
 		}
 	case clistat.EnteredClientMode:
-		if dia.entryConf.ApplyFromMe() {
+		if dia.connectorConf.ApplyFromMe() {
 			// 対局を申し込みます。
-			_, configuredColorUpperCase := dia.entryConf.MyColor()
+			_, configuredColorUpperCase := dia.connectorConf.MyColor()
 
 			fmt.Printf("[情報] lis.MyColorを%sに変更☆（＾～＾）\n", configuredColorUpperCase)
 			dia.MyColor = phase.ToNum(configuredColorUpperCase)
 
-			message := fmt.Sprintf("match %s %s %d %d %d\n", dia.entryConf.OpponentName(), configuredColorUpperCase, dia.entryConf.BoardSize(), dia.entryConf.AvailableTimeMinutes(), dia.entryConf.CanadianTiming())
+			message := fmt.Sprintf("match %s %s %d %d %d\n", dia.connectorConf.OpponentName(), configuredColorUpperCase, dia.connectorConf.BoardSize(), dia.connectorConf.AvailableTimeMinutes(), dia.connectorConf.CanadianTiming())
 			fmt.Printf("[情報] 対局を申し込んだぜ☆（＾～＾）[%s]", message)
 			oi.LongWrite(dia.writer, []byte(message))
 		}
@@ -265,14 +265,14 @@ func (dia *NngsClientStateDiagram) parse(lis *nngsClientStateDiagramListener) {
 						dia.BoardSize = uint(boardSize)
 						fmt.Printf("[情報] ボードサイズは%d☆（＾～＾）", dia.BoardSize)
 
-						configuredColor, _ := dia.entryConf.MyColor()
+						configuredColor, _ := dia.connectorConf.MyColor()
 
 						if dia.MyColor != configuredColor {
 							panic(u.G.Log.Fatal("Unexpected phase. MyColor=%d configuredColor=%d.", dia.MyColor, configuredColor))
 						}
 
 						// cmd_match
-						message := fmt.Sprintf("match %s %s %d %d %d\n", opponentPlayerName, myColorUppercase, dia.entryConf.BoardSize(), dia.entryConf.AvailableTimeMinutes(), dia.entryConf.CanadianTiming())
+						message := fmt.Sprintf("match %s %s %d %d %d\n", opponentPlayerName, myColorUppercase, dia.connectorConf.BoardSize(), dia.connectorConf.AvailableTimeMinutes(), dia.connectorConf.CanadianTiming())
 						fmt.Printf("[情報] 対局を申し込むぜ☆（＾～＾）[%s]\n", message)
 						oi.LongWrite(dia.writer, []byte(message))
 					}
